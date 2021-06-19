@@ -183,4 +183,3 @@ do-install:
 # TODO
 # * use tag instead of EQT_GITREF
 # * switch to the upstream, remove EQT_FREEBSD_GHUSER
-# * fix permissions
