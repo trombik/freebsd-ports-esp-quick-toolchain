@@ -24,6 +24,9 @@ COMMENT=	GCC toolchain for esp8266/arduino
 LICENSE=	GPLv2
 #LICENSE_FILE=
 
+LIB_DEPENDS=	\
+	libmpfr.so:math/mpfr \
+	libgmp.so:math/gmp
 BUILD_DEPENDS=	bash:shells/bash \
 	autoconf>=2.69:devel/autoconf \
 	automake>=1.16.1:devel/automake
@@ -36,7 +39,7 @@ EQT_GHUSER=	earlephilhower
 # https://github.com/earlephilhower/esp-quick-toolchain/issues/28
 EQT_FREEBSD_GHUSER=	kmihaylov
 
-USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool
+USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 USE_GCC=	9+
 # XXX if you know other ARCH that works, let me know
 ONLY_FOR_ARCHS=	amd64
