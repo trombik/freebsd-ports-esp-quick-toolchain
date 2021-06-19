@@ -101,6 +101,11 @@ gcc101_PLIST= ${.CURDIR}/pkg-plist.gcc101
 gcc102_PLIST= ${.CURDIR}/pkg-plist.gcc102
 DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
 
+# XXX timestamp of the build. see the release page at:
+# https://github.com/earlephilhower/esp-quick-toolchain/releases
+# the value is the last digits in file names. an example:
+# aarch64-linux-gnu.esptool-f80ae31.210605.tar.gz
+EQT_STAMP=	210605
 EQT_STRIP_FILES=	\
 	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcc1plugin.so.0 \
 	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcp1plugin.so.0 \
@@ -138,11 +143,13 @@ pre-configure:
 	@${REINPLACE_CMD} \
 		-e 's,%%CC%%,${CC},g' \
 		-e 's,%%CXX%%,${CXX},g' \
+		-e 's,%%ARCH%%,${ARCH},g' \
 		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
 		-e 's,%%EQT_GITREF%%,${EQT_GITREF},g' \
 		-e 's,%%EQT_GITREF_SPIFFS%%,${EQT_GITREF_SPIFFS},g' \
 		-e 's,%%EQT_GITREF_MKLITTLEFS%%,${EQT_GITREF_MKLITTLEFS},g' \
 		-e 's,%%EQT_GITREF_ESPTOOL_CK%%,${EQT_GITREF_ESPTOOL_CK},g' \
+		-e 's,%%EQT_STAMP%%,${EQT_STAMP},g' \
 		${WRKSRC}/Makefile
 	@${REINPLACE_CMD} \
 		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
@@ -163,9 +170,13 @@ pre-configure:
 		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2
 
 do-install:
-	${INSTALL} -d ${STAGEDIR}${PREFIX}/${PORTNAME}${PKGNAMESUFFIX}
-	(cd ${WRKSRC}/xtensa-lx106-elf.x86_64 && ${COPYTREE_SHARE} . ${STAGEDIR}${PREFIX}/${PORTNAME}-${FLAVOR})
-	(cd ${STAGEDIR}${PREFIX}/${PORTNAME}-${FLAVOR} && ${STRIP_CMD} ${EQT_STRIP_FILES})
+	${INSTALL} -d ${STAGEDIR}${PREFIX}//xtensa-lx106-elf-${FLAVOR}
+	# example: x86_64-portbld-freebsd14.0.xtensa-lx106-elf-a114ba5.210619.tar.gz
+	${TAR} -x \
+		-s '/^xtensa-lx106-elf/xtensa-lx106-elf-${FLAVOR}/' \
+		-C ${STAGEDIR}${PREFIX} \
+		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.xtensa-lx106-elf-${EQT_GITREF}.${EQT_STAMP}.tar.gz
+	(cd ${STAGEDIR}${PREFIX}/xtensa-lx106-elf-${FLAVOR} && ${STRIP_CMD} ${EQT_STRIP_FILES})
 
 .include <bsd.port.mk>
 

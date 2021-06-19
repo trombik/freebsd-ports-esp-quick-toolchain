@@ -20,7 +20,16 @@
  endif
  
  $(info $(BUILDENV))
-@@ -217,11 +219,11 @@ RPI_TAROPT := zcf
+@@ -35,7 +37,7 @@ GCC     := $(if $(GCC),$(GCC),4.8)
+ PWD      := $(shell pwd)
+ REPODIR  := $(PWD)/repo
+ PATCHDIR := $(PWD)/patches
+-STAMP    := $(shell date +%y%m%d)
++STAMP    := %%EQT_STAMP%%
+ 
+ # For uploading, the GH user and PAT
+ GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
+@@ -217,17 +219,17 @@ RPI_TAROPT := zcf
  RPI_TAREXT := tar.gz
  RPI_ASYS   := linux_armv6l
  
@@ -35,6 +44,13 @@
  #FREEBSD_BFLGS  := -l:libmd.a LDFLAGS=-static
  FREEBSD_BFLGS := 
  FREEBSD_TARCMD := tar
+ FREEBSD_TAROPT := -czf
+ FREEBSD_TAREXT := tar.gz
+-FREEBSD_ASYS   := freebsd_x86_64
++FREEBSD_ASYS   := freebsd_%%ARCH%%
+ 
+ # Call with $@ to get the appropriate variable for this architecture
+ host   = $($(call arch,$(1))_HOST)
 @@ -308,9 +310,7 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
           export CFLAGS="-I$(call install,$(1))/include $(ADDITIONALLIBPATH) -pipe"; \
           export LDFLAGS="-L$(call install,$(1))/lib"; \
