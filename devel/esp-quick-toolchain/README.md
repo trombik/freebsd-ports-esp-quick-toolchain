@@ -6,4 +6,4 @@ To build Arduino projects, you need this.
 
 ## Status
 
-* at the moment, alpha version. it does not work.
+* `poudriere bulk` succeeds without warning on 14-CURRENT
