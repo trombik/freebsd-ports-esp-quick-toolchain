@@ -31,6 +31,12 @@ BUILD_DEPENDS=	bash:shells/bash \
 	autoconf>=2.69:devel/autoconf \
 	automake>=1.16.1:devel/automake
 
+# XXX if you know other ARCH that works, let me know
+ONLY_FOR_ARCHS=	amd64
+USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
+FLAVORS=	gcc101 gcc102
+FLAVOR?=	${FLAVORS:[1]}
+
 # the upstream
 # https://github.com/earlephilhower/esp-quick-toolchain
 EQT_GHUSER=	earlephilhower
@@ -39,10 +45,7 @@ EQT_GHUSER=	earlephilhower
 # https://github.com/earlephilhower/esp-quick-toolchain/issues/28
 EQT_FREEBSD_GHUSER=	kmihaylov
 
-USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 USE_GCC=	9+
-# XXX if you know other ARCH that works, let me know
-ONLY_FOR_ARCHS=	amd64
 SHEBANG_FILES=	*.py
 USE_GITHUB=	yes
 MAKE_ARGS+=	GCC=${EQT_GCC_VERSION} GHUSER=${EQT_GHUSER} GHTOKEN=dummy
@@ -96,8 +99,6 @@ EQT_GITREF_ARDUINO_UZLIB=	27e4f4c
 # see esp82xx-nonos-linklayer/makefiles/Makefile.defs
 EQT_GITREF_LWIP2=	STABLE-2_1_2_RELEASE
 
-FLAVORS=	gcc101 gcc102
-FLAVOR?=	${FLAVORS:[1]}
 gcc101_PKGNAMESUFFIX=	-${FLAVOR}
 gcc102_PKGNAMESUFFIX=	-${FLAVOR}
 gcc101_PLIST= ${.CURDIR}/pkg-plist.gcc101
