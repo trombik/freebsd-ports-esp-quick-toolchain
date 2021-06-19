@@ -1,5 +1,22 @@
---- arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2.orig	2021-06-19 04:46:52 UTC
+--- arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2.orig	2020-12-24 00:23:36 UTC
 +++ arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2
+@@ -49,12 +49,12 @@ $(LWIP_LIB_RELEASE): $(LWIP_LIB)
+ 
+ .PHONY: $(LWIP_LIB)
+ $(LWIP_LIB):
+-	make -f makefiles/Makefile.glue-esp BUILD=$(BUILD) V=$(V)
+-	make -f makefiles/Makefile.glue target=$(target) BUILD=$(BUILD) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V)
++	%%MAKE_CMD%% -f makefiles/Makefile.glue-esp BUILD=$(BUILD) V=$(V)
++	%%MAKE_CMD%% -f makefiles/Makefile.glue target=$(target) BUILD=$(BUILD) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V)
+ ifeq ($(target),arduino)
+-	make -C lwip2-src/src -f ../../makefiles/Makefile.lwip2 BUILD=../../$(BUILD) LWIP_LIB=../../$(LWIP_LIB) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V) SDK=../../$(SDK)
++	%%MAKE_CMD%% -C lwip2-src/src -f ../../makefiles/Makefile.lwip2 BUILD=../../$(BUILD) LWIP_LIB=../../$(LWIP_LIB) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V) SDK=../../$(SDK)
+ else
+-	make -C lwip2-src/src -f ../../makefiles/Makefile.lwip2 BUILD=../../$(BUILD) LWIP_LIB=../../$(LWIP_LIB) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V)
++	%%MAKE_CMD%% -C lwip2-src/src -f ../../makefiles/Makefile.lwip2 BUILD=../../$(BUILD) LWIP_LIB=../../$(LWIP_LIB) TCP_MSS=$(TCP_MSS) LWIP_FEATURES=$(LWIP_FEATURES) LWIP_IPV6=$(LWIP_IPV6) V=$(V)
+ endif
+ 
+ section-show:
 @@ -81,4 +81,3 @@ endif
  
  clean:

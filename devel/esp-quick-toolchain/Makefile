@@ -144,5 +144,8 @@ pre-configure:
 		-e 's,%%EQT_GITREF_ARDUINO_ESP82XX_NONOS_LINKLAYER%%,${EQT_GITREF_ARDUINO_ESP82XX_NONOS_LINKLAYER},g' \
 		-e 's,%%EQT_GITREF_LWIP2%%,${EQT_GITREF_LWIP2},g' \
 		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/make-lwip-hash
+	@${REINPLACE_CMD} \
+		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
+		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2
 
 .include <bsd.port.mk>
