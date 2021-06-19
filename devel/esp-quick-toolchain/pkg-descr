@@ -1,0 +1,4 @@
+GCC toolchain for esp8266/arduino on MacOS, Linux, ARM64, Raspberry Pi,
+Windows, and FreeBSD.
+
+WWW: https://github.com/kmihaylov/esp-quick-toolchain

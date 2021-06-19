@@ -1,0 +1,181 @@
+--- Makefile.orig	2021-03-22 22:07:55 UTC
++++ Makefile
+@@ -6,15 +6,17 @@ STRIPCMD = $(shell $(GCCCMD) -dumpmachine)-strip
+ CLEANBUILDDIR = true 
+ STATCMD = stat -c%s 
+ SHA256CMD = sha256sum
++OSRELEASE = $(shell uname -r)
+ ifeq ($(shell uname),FreeBSD)
+ 	SHELL := /usr/local/bin/bash
+ 	BUILDENV = FREEBSD
+-	GCCCMD = gcc9
+-	G++CMD = g++9
++	GCCCMD = %%CC%%
++	G++CMD = %%CXX%%
+ 	ADDITIONALLIBPATH = -I/usr/lib -I/usr/local/include
+ 	STRIPCMD = /usr/local/$(shell $(GCCCMD) -dumpmachine)/bin/strip
+ 	STATCMD = stat -f %k
+ 	SHA256CMD = sha256
++	OSREL= $(shell echo $(OSRELEASE) | sed -e 's/-.*//')
+ endif
+ 
+ $(info $(BUILDENV))
+@@ -217,11 +219,11 @@ RPI_TAROPT := zcf
+ RPI_TAREXT := tar.gz
+ RPI_ASYS   := linux_armv6l
+ 
+-FREEBSD_HOST   := x86_64-portbld-freebsd12.2 
+-FREEBSD_AHOST  := x86_64-portbld-freebsd12.2 
++FREEBSD_HOST   := x86_64-portbld-freebsd$(OSREL)
++FREEBSD_AHOST  := x86_64-portbld-freebsd$(OSREL)
+ FREEBSD_EXT    := .x86_64
+ FREEBSD_EXE    := 
+-FREEBSD_MKTGT  := freebsd 
++FREEBSD_MKTGT  := freebsd
+ #FREEBSD_BFLGS  := -l:libmd.a LDFLAGS=-static
+ FREEBSD_BFLGS := 
+ FREEBSD_TARCMD := tar
+@@ -308,9 +310,7 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
+          export CFLAGS="-I$(call install,$(1))/include $(ADDITIONALLIBPATH) -pipe"; \
+          export LDFLAGS="-L$(call install,$(1))/lib"; \
+          export PATH="$(call install,.stage.$(BUILDENV).stage)/bin:$${PATH}"; \
+-         export LD_LIBRARY_PATH="$(call install,.stage.$(BUILDENV).stage)/lib:$${LD_LIBRARY_PATH}"; \
+-	 export CC=$(GCCCMD); \
+-	 export CXX=$(G++CMD)
++         export LD_LIBRARY_PATH="$(call install,.stage.$(BUILDENV).stage)/lib:$${LD_LIBRARY_PATH}"
+ 
+ # Creates a package.json file for PlatformIO
+ # Package version **must** conform with Semantic Versioning specicfication:
+@@ -358,7 +358,7 @@ download: .stage.download
+ 
+ 
+ # Clean all temporary outputs
+-clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean
++clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean .cleaninst.WIN32.clean .cleaninst.WIN64.clean .cleaninst.OSX.clean .cleaninst.ARM64.clean .cleaninst.RPI.clean .cleaninst.FREEBSD.clean
+ 	echo STAGE: $@
+ 	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
+ 
+@@ -372,31 +372,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ .stage.download:
+ 	echo STAGE: $@
+ 	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/$(BINUTILS_DIR) || git clone $(BINUTILS_REPO)                               $(REPODIR)/$(BINUTILS_DIR) ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/$(GCC_DIR)      || git clone $(GCC_REPO)                                    $(REPODIR)/$(GCC_DIR) ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/newlib          || git clone https://github.com/$(GHUSER)/newlib-xtensa.git $(REPODIR)/newlib      ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/lx106-hal       || git clone https://github.com/$(GHUSER)/lx106-hal.git     $(REPODIR)/lx106-hal   ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/mkspiffs        || git clone https://github.com/$(GHUSER)/mkspiffs.git      $(REPODIR)/mkspiffs    ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/mklittlefs      || git clone https://github.com/$(GHUSER)/mklittlefs.git    $(REPODIR)/mklittlefs  ) >> $(call log,$@) 2>&1
+-	(test -d $(REPODIR)/esptool         || git clone https://github.com/$(GHUSER)/esptool-ck.git    $(REPODIR)/esptool     ) >> $(call log,$@) 2>&1
+ 	touch $@
+ 
+ # Completely clean out a git directory, removing any untracked files
+ .clean.%.git:
+ 	echo STAGE: $@
+-	cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
++	# cd $(REPODIR)/$(call arch,$@) && git reset --hard HEAD && git clean -f -d
+ 
+ .clean.gits: .clean.$(BINUTILS_DIR).git .clean.$(GCC_DIR).git .clean.newlib.git .clean.newlib.git .clean.lx106-hal.git .clean.mkspiffs.git .clean.esptool.git .clean.mklittlefs.git
+ 
+ # Prep the git repos with no patches and any required libraries for gcc
+ .stage.prepgit: .stage.download .clean.gits
+ 	echo STAGE: $@
+-	for i in binutils-gdb gcc newlib lx106-hal mkspiffs mklittlefs esptool; do cd $(REPODIR)/$$i && git reset --hard HEAD && git submodule init && git submodule update && git clean -f -d; done > $(call log,$@) 2>&1
+ 	for url in $(GNUHTTP)/gmp-6.1.0.tar.bz2 $(GNUHTTP)/mpfr-3.1.4.tar.bz2 $(GNUHTTP)/mpc-1.0.3.tar.gz \
+ 	           $(GNUHTTP)/isl-$(ISL).tar.bz2 $(GNUHTTP)/cloog-0.18.1.tar.gz https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/libelf-0.8.13.tar.gz ; do \
+ 	    archive=$${url##*/}; name=$${archive%.t*}; base=$${name%-*}; ext=$${archive##*.} ; \
+ 	    echo "-------- getting $${name}" ; \
+-	    cd $(REPODIR) && ( test -r $${archive} || wget $${url} ) ; \
+ 	    case "$${ext}" in \
+ 	        gz)  (cd $(REPODIR)/$(GCC_DIR); tar xfz ../$${archive});; \
+ 	        bz2) (cd $(REPODIR)/$(GCC_DIR); tar xfj ../$${archive});; \
+@@ -408,9 +399,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ # Checkout any required branches
+ .stage.checkout: .stage.prepgit
+ 	echo STAGE: $@
+-	(cd $(REPODIR)/$(GCC_DIR) && git reset --hard && git checkout $(GCC_BRANCH)) > $(call log,$@) 2>&1
+-	(cd $(REPODIR)/$(BINUTILS_DIR) && git reset --hard && git checkout $(BINUTILS_BRANCH)) > $(call log,$@) 2>&1
+-	(cd $(REPODIR)/mkspiffs && git reset --hard && git submodule deinit --all && git clean -f -d && git checkout $(MKSPIFFS_BRANCH) && git submodule init && git submodule update) >> $(call log,$@) 2>&1
+ 	touch $@
+ 
+ # Apply our patches
+@@ -538,7 +526,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ 	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
+ 	(cd pkg.$(call arch,$@)/xtensa-lx106-elf; $(call setenv,$@); pkgdesc="xtensa-gcc"; pkgname="toolchain-xtensa"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+-	(tarball=$(shell $(GCCCMD) -dumpmachine).xtensa-lx106-elf-$$(git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
++	(tarball=$(shell $(GCCCMD) -dumpmachine).xtensa-lx106-elf-%%EQT_GITREF%%.$(STAMP).$(call tarext,$@) ; \
+ 	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+ 	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	touch $@
+@@ -556,7 +544,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ 	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
+ 	(cd pkg.mkspiffs.$(call arch,$@)/mkspiffs; $(call setenv,$@); pkgdesc="mkspiffs-utility"; pkgname="mkspiffs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+ 	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
+-	(tarball=$(call host,$@).mkspiffs-$$(cd $(REPODIR)/mkspiffs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
++	(tarball=$(call host,$@).mkspiffs-%%EQT_GITREF_SPIFFS%%.$(STAMP).$(call tarext,$@) ; \
+ 	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+ 	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	touch $@
+@@ -574,7 +562,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ 	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
+ 	(cd pkg.mklittlefs.$(call arch,$@)/mklittlefs; $(call setenv,$@); pkgdesc="littlefs-utility"; pkgname="mklittlefs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
+ 	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
+-	(tarball=$(call host,$@).mklittlefs-$$(cd $(REPODIR)/mklittlefs && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
++	(tarball=$(call host,$@).mklittlefs-%%EQT_GITREF_MKLITTLEFS%%.$(STAMP).$(call tarext,$@) ; \
+ 	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+ 	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	touch $@
+@@ -591,7 +579,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
+ 	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
+-	(tarball=$(call host,$@).esptool-$$(cd $(REPODIR)/esptool && git rev-parse --short HEAD).$(STAMP).$(call tarext,$@) ; \
++	(tarball=$(call host,$@).esptool-%%EQT_GITREF_ESPTOOL_CK%%.$(STAMP).$(call tarext,$@) ; \
+ 	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
+ 	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
+ 	touch $@
+@@ -604,15 +592,15 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ install: .stage.LINUX.install
+ .stage.LINUX.install:
+ 	echo STAGE: $@
+-	rm -rf $(ARDUINO)
+-	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
+-	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
++	# rm -rf $(ARDUINO)
++	# git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
++	# (cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
+ 	#echo "-------- Building installable newlib"
+ 	#rm -rf arena/newlib-install; mkdir -p arena/newlib-install
+ 	#cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
+ 	echo "-------- Building installable hal"
+ 	rm -rf arena/hal-install; mkdir -p arena/hal-install
+-	cd arena/hal-install; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
++	cd arena/hal-install; $(call setenv,$@); CC=xtensa-lx106-elf-gcc CXX=xtensa-lx106-elf-g++ $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
+ 	cd arena/hal-install; $(call setenv,$@); $(MAKE) ; $(MAKE) install
+ 	echo "-------- Copying GCC libs"
+ 	#cp $(call install,$@)/lib/gcc/xtensa-lx106-elf/*/libgcc.a  $(ARDUINO)/tools/sdk/lib/.
+@@ -622,19 +610,19 @@ install: .stage.LINUX.install
+ 	rm -rf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
+ 	cp -a $(call install,$@)/xtensa-lx106-elf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
+ 	echo "-------- Updating package.json"
+-	ver=$(REL)-$(SUBREL)-$(shell git rev-parse --short HEAD); pkgfile=$(ARDUINO)/package/package_esp8266com_index.template.json; \
++	ver=$(REL)-$(SUBREL)-%%EQT_GITREF%%; pkgfile=$(ARDUINO)/package/package_esp8266com_index.template.json; \
+ 	./patch_json.py --pkgfile "$${pkgfile}" --tool xtensa-lx106-elf-gcc --ver "$${ver}" --glob '*xtensa-lx106-elf*.json' ; \
+ 	./patch_json.py --pkgfile "$${pkgfile}" --tool esptool --ver "$${ver}" --glob '*esptool*json' ; \
+ 	./patch_json.py --pkgfile "$${pkgfile}" --tool mkspiffs --ver "$${ver}" --glob '*mkspiffs*json'; \
+ 	./patch_json.py --pkgfile "$${pkgfile}" --tool mklittlefs --ver "$${ver}" --glob '*mklittlefs*json'
+ 	echo "-------- Installing toolchain"
+-	(cd $(ARDUINO)/tools && tar xf ../../x86_64-linux-gnu.xtensa-lx106-elf-*.tar.gz )
++	(cd $(ARDUINO)/tools && tar xf ../../x86_64-portbld-freebsd*.xtensa-lx106-elf-*.tar.gz )
+ 	echo "-------- Building and installing BearSSL"
+-	(cd $(ARDUINO)/tools/sdk/ssl && make clean && make all && make install)
++	(cd $(ARDUINO)/tools/sdk/ssl && %%MAKE_CMD%% clean && %%MAKE_CMD%% all && %%MAKE_CMD%% install)
+ 	echo "-------- Building and installing LWIP2"
+-	(cd $(ARDUINO)/tools/sdk/lwip2 && make clean && make install)
++	(cd $(ARDUINO)/tools/sdk/lwip2 && %%MAKE_CMD%% clean && %%MAKE_CMD%% install)
+ 	echo "-------- Building eboot.elf"
+-	(cd $(ARDUINO)/bootloaders/eboot && make clean && make)
++	(cd $(ARDUINO)/bootloaders/eboot && %%MAKE_CMD%% clean && %%MAKE_CMD%%)
+ 	echo "Install done"
+ 
+ # Upload a draft toolchain release
