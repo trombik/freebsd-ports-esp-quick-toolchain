@@ -1,0 +1,38 @@
+--- arduino/bootloaders/eboot/Makefile.orig	2021-05-16 01:17:15 UTC
++++ arduino/bootloaders/eboot/Makefile
+@@ -13,15 +13,20 @@ TARGET_OBJ_PATHS := $(addprefix $(TARGET_DIR)/,$(TARGE
+ UZLIB_PATH := ../../tools/sdk/uzlib/src
+ UZLIB_FLAGS := -DRUNTIME_BITS_TABLES
+ 
+-CC := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-gcc
+-CXX := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-g++
+-AR := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-ar
+-LD := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-gcc
+-OBJDUMP := $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-objdump
++# do NOT allow overriding variables.
++#
++# the port sets environment variables, such as CC, CXX and LD, but we do not
++# need build environment for FreeBSD.
++# esp-quick-toolchain
++CC = $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-gcc
++CXX = $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-g++
++AR = $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-ar
++LD = $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-gcc
++OBJDUMP = $(XTENSA_TOOLCHAIN)xtensa-lx106-elf-objdump
+ 
+ INC += -I../../tools/sdk/include -I../../tools/sdk/uzlib/src
+ 
+-CFLAGS += -std=gnu17
++CFLAGS = -std=gnu17
+ 
+ CFLAGS += -Os -fcommon -g -Wall -Wpointer-arith -Wno-implicit-function-declaration -Wl,-EL -fno-inline-functions -nostdlib -mlongcalls -mno-text-section-literals -ffunction-sections -fdata-sections -free -fipa-pta
+ 
+@@ -29,7 +34,7 @@ CFLAGS += $(INC)
+ 
+ CFLAGS += $(UZLIB_FLAGS)
+ 
+-LDFLAGS	+= -nostdlib -Wl,--no-check-sections -Wl,--gc-sections -umain -Wl,-Map,$(@:.elf=.map)
++LDFLAGS	= -nostdlib -Wl,--no-check-sections -Wl,--gc-sections -umain -Wl,-Map,$(@:.elf=.map)
+ 
+ LD_SCRIPT := -Teboot.ld
+ 

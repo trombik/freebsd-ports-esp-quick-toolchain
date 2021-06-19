@@ -172,7 +172,7 @@
 +	(cd $(ARDUINO)/tools/sdk/ssl && %%MAKE_CMD%% clean && %%MAKE_CMD%% all && %%MAKE_CMD%% install)
  	echo "-------- Building and installing LWIP2"
 -	(cd $(ARDUINO)/tools/sdk/lwip2 && make clean && make install)
-+	(cd $(ARDUINO)/tools/sdk/lwip2 && %%MAKE_CMD%% clean && %%MAKE_CMD%% install)
++	(cd $(ARDUINO)/tools/sdk/lwip2 && %%MAKE_CMD%% clean && unset PREFIX && %%MAKE_CMD%% install)
  	echo "-------- Building eboot.elf"
 -	(cd $(ARDUINO)/bootloaders/eboot && make clean && make)
 +	(cd $(ARDUINO)/bootloaders/eboot && %%MAKE_CMD%% clean && %%MAKE_CMD%%)

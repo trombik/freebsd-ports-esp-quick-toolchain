@@ -1,7 +1,7 @@
 #
 
 PORTNAME=	esp-quick-toolchain
-DISTVERSION=	20210617
+DISTVERSION=	3.0.2
 CATEGORIES=	devel
 MASTER_SITES=	\
 	GNU/gmp/:src_gmp \
@@ -36,7 +36,7 @@ EQT_GHUSER=	earlephilhower
 # https://github.com/earlephilhower/esp-quick-toolchain/issues/28
 EQT_FREEBSD_GHUSER=	kmihaylov
 
-USES=	gmake makeinfo tar:bzip2 python shebangfix
+USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool
 USE_GCC=	9+
 # XXX if you know other ARCH that works, let me know
 ONLY_FOR_ARCHS=	amd64
@@ -97,18 +97,32 @@ FLAVORS=	gcc101 gcc102
 FLAVOR?=	${FLAVORS:[1]}
 gcc101_PKGNAMESUFFIX=	-${FLAVOR}
 gcc102_PKGNAMESUFFIX=	-${FLAVOR}
+gcc101_PLIST= ${.CURDIR}/pkg-plist.gcc101
+gcc102_PLIST= ${.CURDIR}/pkg-plist.gcc102
+DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
+
+EQT_STRIP_FILES=	\
+	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcc1plugin.so.0 \
+	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcp1plugin.so.0 \
+	lib/libcc1.so.0 \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/install-tools/fixincl \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/liblto_plugin.so.0 \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/lto-wrapper \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/gengtype
+
 .if ${FLAVOR} == gcc101
 EQT_GCC_VERSION=	10.1
+EQT_GCC_VERSION_FULL=	10.1.0
 EQT_GITREF_GCC=	releases/gcc-10.1.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
 .elif ${FLAVOR} == gcc102
 EQT_GCC_VERSION=	10.2
+EQT_GCC_VERSION_FULL=	10.2.0
 EQT_GITREF_GCC=	releases/gcc-10.2.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
 .endif
-DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
 
 post-extract:
 	${MKDIR} ${WRKSRC}/repo
@@ -148,4 +162,14 @@ pre-configure:
 		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
 		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2
 
+do-install:
+	${INSTALL} -d ${STAGEDIR}${PREFIX}/${PORTNAME}${PKGNAMESUFFIX}
+	(cd ${WRKSRC}/xtensa-lx106-elf.x86_64 && ${COPYTREE_SHARE} . ${STAGEDIR}${PREFIX}/${PORTNAME}-${FLAVOR})
+	(cd ${STAGEDIR}${PREFIX}/${PORTNAME}-${FLAVOR} && ${STRIP_CMD} ${EQT_STRIP_FILES})
+
 .include <bsd.port.mk>
+
+# TODO
+# * use tag instead of EQT_GITREF
+# * switch to the upstream, remove EQT_FREEBSD_GHUSER
+# * fix permissions
