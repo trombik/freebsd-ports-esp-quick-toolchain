@@ -181,8 +181,8 @@ do-install:
 		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.xtensa-lx106-elf-${EQT_GITREF}.${EQT_STAMP}.tar.gz
 	(cd ${STAGEDIR}${PREFIX}/xtensa-lx106-elf-${FLAVOR} && ${STRIP_CMD} ${EQT_STRIP_FILES})
 
-.include <bsd.port.mk>
-
 # TODO
 # * use tag instead of EQT_GITREF
 # * switch to the upstream, remove EQT_FREEBSD_GHUSER
+
+.include <bsd.port.mk>
