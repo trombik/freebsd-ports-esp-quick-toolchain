@@ -27,11 +27,9 @@ ONLY_FOR_ARCHS_REASON=	not ported to other ARCH
 LIB_DEPENDS=	\
 	libmpfr.so:math/mpfr \
 	libgmp.so:math/gmp
-BUILD_DEPENDS=	bash:shells/bash \
-	autoconf>=2.69:devel/autoconf \
-	automake>=1.16.1:devel/automake
+BUILD_DEPENDS=	bash:shells/bash
 
-USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
+USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv autoreconf
 FLAVORS=	gcc101 gcc102
 FLAVOR?=	${FLAVORS:[1]}
 
