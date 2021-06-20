@@ -1,5 +1,3 @@
-#
-
 PORTNAME=	esp-quick-toolchain
 DISTVERSION=	3.0.2
 CATEGORIES=	devel
@@ -22,7 +20,9 @@ MAINTAINER=	y@trombik.org
 COMMENT=	GCC toolchain for esp8266/arduino
 
 LICENSE=	GPLv2
-#LICENSE_FILE=
+
+ONLY_FOR_ARCHS=	amd64
+ONLY_FOR_ARCHS_REASON=	not ported to other ARCH
 
 LIB_DEPENDS=	\
 	libmpfr.so:math/mpfr \
@@ -31,8 +31,6 @@ BUILD_DEPENDS=	bash:shells/bash \
 	autoconf>=2.69:devel/autoconf \
 	automake>=1.16.1:devel/automake
 
-# XXX if you know other ARCH that works, let me know
-ONLY_FOR_ARCHS=	amd64
 USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 FLAVORS=	gcc101 gcc102
 FLAVOR?=	${FLAVORS:[1]}
