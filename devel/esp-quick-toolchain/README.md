@@ -8,3 +8,4 @@ To build Arduino projects, you need this.
 
 * `poudriere bulk` succeeds without warning on 14-CURRENT and 13.0-RELEASE
 * compiles a blink example for ESP8266 with ESP8266/Arduino version 3.0.0
+* still beta
