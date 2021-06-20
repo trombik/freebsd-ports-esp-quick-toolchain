@@ -29,7 +29,7 @@
  
  # For uploading, the GH user and PAT
  GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
-@@ -217,17 +219,17 @@ RPI_TAROPT := zcf
+@@ -217,17 +219,18 @@ RPI_TAROPT := zcf
  RPI_TAREXT := tar.gz
  RPI_ASYS   := linux_armv6l
  
@@ -40,9 +40,12 @@
  FREEBSD_EXT    := .x86_64
  FREEBSD_EXE    := 
 -FREEBSD_MKTGT  := freebsd 
+-#FREEBSD_BFLGS  := -l:libmd.a LDFLAGS=-static
+-FREEBSD_BFLGS := 
 +FREEBSD_MKTGT  := freebsd
- #FREEBSD_BFLGS  := -l:libmd.a LDFLAGS=-static
- FREEBSD_BFLGS := 
++# XXX use -L/usr/lib -lmd to fix "undefined reference to `_libmd_SHA256_Init'"
++# during the build
++FREEBSD_BFLGS := LDFLAGS='-static -L/usr/lib -lmd -v'
  FREEBSD_TARCMD := tar
  FREEBSD_TAROPT := -czf
  FREEBSD_TAREXT := tar.gz
@@ -51,7 +54,7 @@
  
  # Call with $@ to get the appropriate variable for this architecture
  host   = $($(call arch,$(1))_HOST)
-@@ -308,9 +310,7 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
+@@ -308,9 +311,7 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
           export CFLAGS="-I$(call install,$(1))/include $(ADDITIONALLIBPATH) -pipe"; \
           export LDFLAGS="-L$(call install,$(1))/lib"; \
           export PATH="$(call install,.stage.$(BUILDENV).stage)/bin:$${PATH}"; \
@@ -62,7 +65,7 @@
  
  # Creates a package.json file for PlatformIO
  # Package version **must** conform with Semantic Versioning specicfication:
-@@ -358,7 +358,7 @@ download: .stage.download
+@@ -358,7 +359,7 @@ download: .stage.download
  
  
  # Clean all temporary outputs
@@ -71,7 +74,7 @@
  	echo STAGE: $@
  	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
  
-@@ -372,31 +372,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -372,31 +373,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  .stage.download:
  	echo STAGE: $@
  	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
@@ -104,7 +107,7 @@
  	    case "$${ext}" in \
  	        gz)  (cd $(REPODIR)/$(GCC_DIR); tar xfz ../$${archive});; \
  	        bz2) (cd $(REPODIR)/$(GCC_DIR); tar xfj ../$${archive});; \
-@@ -408,9 +399,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -408,9 +400,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  # Checkout any required branches
  .stage.checkout: .stage.prepgit
  	echo STAGE: $@
@@ -114,7 +117,7 @@
  	touch $@
  
  # Apply our patches
-@@ -538,7 +526,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -538,7 +527,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	mkdir -p pkg.$(call arch,$@) >> $(call log,$@) 2>&1
  	cp -a $(call install,$@) pkg.$(call arch,$@)/xtensa-lx106-elf >> $(call log,$@) 2>&1
  	(cd pkg.$(call arch,$@)/xtensa-lx106-elf; $(call setenv,$@); pkgdesc="xtensa-gcc"; pkgname="toolchain-xtensa"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
@@ -123,7 +126,7 @@
  	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -556,7 +544,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -556,7 +545,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	mkdir -p pkg.mkspiffs.$(call arch,$@)/mkspiffs >> $(call log,$@) 2>&1
  	(cd pkg.mkspiffs.$(call arch,$@)/mkspiffs; $(call setenv,$@); pkgdesc="mkspiffs-utility"; pkgname="mkspiffs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
  	cp $(call arena,$@)/mkspiffs/mkspiffs$(call exe,$@) pkg.mkspiffs.$(call arch,$@)/mkspiffs/. >> $(call log,$@) 2>&1
@@ -132,7 +135,7 @@
  	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -574,7 +562,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -574,7 +563,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	mkdir -p pkg.mklittlefs.$(call arch,$@)/mklittlefs >> $(call log,$@) 2>&1
  	(cd pkg.mklittlefs.$(call arch,$@)/mklittlefs; $(call setenv,$@); pkgdesc="littlefs-utility"; pkgname="mklittlefs"; $(call makepackagejson,$@)) >> $(call log,$@) 2>&1
  	cp $(call arena,$@)/mklittlefs/mklittlefs$(call exe,$@) pkg.mklittlefs.$(call arch,$@)/mklittlefs/. >> $(call log,$@) 2>&1
@@ -141,7 +144,7 @@
  	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -591,7 +579,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -591,7 +580,7 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
  	mkdir -p pkg.esptool.$(call arch,$@)/esptool >> $(call log,$@) 2>&1
  	cp $(call arena,$@)/esptool/esptool$(call exe,$@) pkg.esptool.$(call arch,$@)/esptool/. >> $(call log,$@) 2>&1
@@ -150,7 +153,7 @@
  	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -604,15 +592,15 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -604,15 +593,15 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  install: .stage.LINUX.install
  .stage.LINUX.install:
  	echo STAGE: $@
@@ -170,7 +173,7 @@
  	cd arena/hal-install; $(call setenv,$@); $(MAKE) ; $(MAKE) install
  	echo "-------- Copying GCC libs"
  	#cp $(call install,$@)/lib/gcc/xtensa-lx106-elf/*/libgcc.a  $(ARDUINO)/tools/sdk/lib/.
-@@ -622,13 +610,13 @@ install: .stage.LINUX.install
+@@ -622,13 +611,13 @@ install: .stage.LINUX.install
  	rm -rf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
  	cp -a $(call install,$@)/xtensa-lx106-elf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
  	echo "-------- Updating package.json"
