@@ -46,6 +46,7 @@ EQT_GHUSER=	earlephilhower
 EQT_FREEBSD_GHUSER=	kmihaylov
 
 USE_GCC=	9+
+BINARY_ALIAS=	make=${GMAKE}
 SHEBANG_FILES=	*.py
 USE_GITHUB=	yes
 MAKE_ARGS+=	GCC=${EQT_GCC_VERSION} GHUSER=${EQT_GHUSER} GHTOKEN=dummy
@@ -148,7 +149,6 @@ pre-configure:
 		-e 's,%%CC%%,${CC},g' \
 		-e 's,%%CXX%%,${CXX},g' \
 		-e 's,%%ARCH%%,${ARCH},g' \
-		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
 		-e 's,%%EQT_GITREF%%,${EQT_GITREF},g' \
 		-e 's,%%EQT_GITREF_SPIFFS%%,${EQT_GITREF_SPIFFS},g' \
 		-e 's,%%EQT_GITREF_MKLITTLEFS%%,${EQT_GITREF_MKLITTLEFS},g' \
@@ -156,22 +156,12 @@ pre-configure:
 		-e 's,%%EQT_STAMP%%,${EQT_STAMP},g' \
 		${WRKSRC}/Makefile
 	@${REINPLACE_CMD} \
-		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
 		-e 's,%%EQT_GITREF_ARDUINO_BEARSSL_ESP8266%%,${EQT_GITREF_ARDUINO_BEARSSL_ESP8266},g' \
 		${WRKSRC}/arduino/tools/sdk/ssl/Makefile
-	@${REINPLACE_CMD} \
-		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
-		${WRKSRC}/arduino/tools/sdk/lwip2/Makefile
-	@${REINPLACE_CMD} \
-		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
-		${WRKSRC}/arduino/tools/sdk/lwip2/builder/Makefile.arduino
 	@${REINPLACE_CMD} \
 		-e 's,%%EQT_GITREF_ARDUINO_ESP82XX_NONOS_LINKLAYER%%,${EQT_GITREF_ARDUINO_ESP82XX_NONOS_LINKLAYER},g' \
 		-e 's,%%EQT_GITREF_LWIP2%%,${EQT_GITREF_LWIP2},g' \
 		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/make-lwip-hash
-	@${REINPLACE_CMD} \
-		-e 's,%%MAKE_CMD%%,${MAKE_CMD},g' \
-		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/Makefile.build-lwip2
 
 do-install:
 	${INSTALL} -d ${STAGEDIR}${PREFIX}//xtensa-lx106-elf-${FLAVOR}
