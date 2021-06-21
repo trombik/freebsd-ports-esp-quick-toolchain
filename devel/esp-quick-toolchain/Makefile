@@ -32,6 +32,7 @@ BUILD_DEPENDS=	bash:shells/bash \
 	automake>=1.16.1:devel/automake
 
 USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
+# use FLAVORS so that different versions of tool-chain can be installed.
 FLAVORS=	gcc101 gcc102
 FLAVOR?=	${FLAVORS:[1]}
 
@@ -131,6 +132,7 @@ EQT_GITREF_GCC=	releases/gcc-10.2.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
 .endif
+EQT_DESTDIR=	${PREFIX}/${PORTNAME}-${FLAVOR}
 
 post-extract:
 	${MKDIR} ${WRKSRC}/repo
@@ -162,13 +164,21 @@ pre-configure:
 		${WRKSRC}/arduino/tools/sdk/lwip2/builder/makefiles/make-lwip-hash
 
 do-install:
-	${INSTALL} -d ${STAGEDIR}${PREFIX}//xtensa-lx106-elf-${FLAVOR}
+	${INSTALL} -d ${STAGEDIR}${EQT_DESTDIR}
 	# example: x86_64-portbld-freebsd14.0.xtensa-lx106-elf-a114ba5.210619.tar.gz
 	${TAR} -x \
-		-s '/^xtensa-lx106-elf/xtensa-lx106-elf-${FLAVOR}/' \
-		-C ${STAGEDIR}${PREFIX} \
+		-C ${STAGEDIR}${EQT_DESTDIR} \
 		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.xtensa-lx106-elf-${EQT_GITREF}.${EQT_STAMP}.tar.gz
-	(cd ${STAGEDIR}${PREFIX}/xtensa-lx106-elf-${FLAVOR} && ${STRIP_CMD} ${EQT_STRIP_FILES})
+	${TAR} -x \
+		-C ${STAGEDIR}${EQT_DESTDIR} \
+		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.esptool-${EQT_GITREF_ESPTOOL_CK}.${EQT_STAMP}.tar.gz
+	${TAR} -x \
+		-C ${STAGEDIR}${EQT_DESTDIR} \
+		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.mklittlefs-${EQT_GITREF_MKLITTLEFS}.${EQT_STAMP}.tar.gz
+	${TAR} -x \
+		-C ${STAGEDIR}${EQT_DESTDIR} \
+		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.mkspiffs-${EQT_GITREF_SPIFFS}.${EQT_STAMP}.tar.gz
+	(cd ${STAGEDIR}${EQT_DESTDIR}/xtensa-lx106-elf && ${STRIP_CMD} ${EQT_STRIP_FILES})
 
 # TODO
 # * use tag instead of EQT_GITREF
