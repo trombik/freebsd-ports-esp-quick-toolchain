@@ -1,5 +1,5 @@
 PORTNAME=	esp-quick-toolchain
-DISTVERSION=	3.0.2
+DISTVERSION=	3.0.3
 CATEGORIES=	devel
 MASTER_SITES=	\
 	GNU/gmp/:src_gmp \
@@ -51,7 +51,7 @@ USE_GITHUB=	yes
 MAKE_ARGS+=	GCC=${EQT_GCC_VERSION} GHUSER=${EQT_GHUSER} GHTOKEN=dummy
 ALL_TARGET=	freebsd
 GH_TUPLE=	\
-	${EQT_FREEBSD_GHUSER}:${PORTNAME}:${EQT_GITREF} \
+	${EQT_GHUSER}:${PORTNAME}:${EQT_GITREF} \
 	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
 	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR} \
 	${EQT_GHUSER}:newlib-xtensa:${EQT_GITREF_NEWLIB}:src_newlib_xtensa/repo/newlib \
@@ -75,7 +75,7 @@ GH_TUPLE=	\
 
 # XXX the Makefile of ${PORTNAME} uses branches instead of specific tags or
 # commit refs.
-EQT_GITREF=	a114ba5
+EQT_GITREF=	${DISTVERSION}-gcc10.3
 EQT_GITREF_NEWLIB=	e1db641e
 EQT_GITREF_LX106_HAL=	e4bcc63c
 EQT_GITREF_MKSPIFFS=	24124efa
@@ -204,9 +204,5 @@ do-install:
 	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/esptool/.piopm
 	${INSTALL_DATA} ${WRKSRC}/tool-mklittlefs.piopm ${STAGEDIR}${EQT_DESTDIR}/mklittlefs/.piopm
 	${INSTALL_DATA} ${WRKSRC}/tool-mkspiffs.piopm ${STAGEDIR}${EQT_DESTDIR}/mkspiffs/.piopm
-
-# TODO
-# * use tag instead of EQT_GITREF
-# * switch to the upstream, remove EQT_FREEBSD_GHUSER
 
 .include <bsd.port.mk>
