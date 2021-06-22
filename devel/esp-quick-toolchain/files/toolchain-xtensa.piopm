@@ -1,0 +1,10 @@
+{
+  "type": "tool",
+  "name": "toolchain-xtensa",
+  "version": "%%EQT_PIO_VERSION%%",
+  "spec": {
+    "owner": "platformio",
+    "name": "toolchain-xtensa",
+    "url": "https://github.com/earlephilhower/esp-quick-toolchain"
+  }
+}

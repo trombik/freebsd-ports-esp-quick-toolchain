@@ -122,12 +122,16 @@ EQT_STRIP_FILES=	\
 .if ${FLAVOR} == gcc101
 EQT_GCC_VERSION=	10.1
 EQT_GCC_VERSION_FULL=	10.1.0
+# pio expects semver like 5.100200.210606, which I really don't understand.
+# the minor version is GCC version, I *guess*.
+EQT_PIO_VERSION=	5.100100.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.1.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
 .elif ${FLAVOR} == gcc102
 EQT_GCC_VERSION=	10.2
 EQT_GCC_VERSION_FULL=	10.2.0
+EQT_PIO_VERSION=	5.100200.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.2.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
@@ -179,6 +183,27 @@ do-install:
 		-C ${STAGEDIR}${EQT_DESTDIR} \
 		-f ${WRKSRC}/x86_64-portbld-freebsd${OSREL}.mkspiffs-${EQT_GITREF_SPIFFS}.${EQT_STAMP}.tar.gz
 	(cd ${STAGEDIR}${EQT_DESTDIR}/xtensa-lx106-elf && ${STRIP_CMD} ${EQT_STRIP_FILES})
+
+	# XXX create .piopm, which is (yet another) undocumented new metadata
+	# file. pio 3.x expects "owner" metadata field, which is NOT in
+	# package.json.  without .piopm, pio rejects packages because "owner" is
+	# not "platformio" but None (i.e. unknown owner). see the logic in
+	# "test_pkg_spec" at:
+	# platformio/package/manager/base.py
+	${CP} ${FILESDIR}/toolchain-xtensa.piopm ${WRKSRC}
+	${CP} ${FILESDIR}/tool-esptool.piopm ${WRKSRC}
+	${CP} ${FILESDIR}/tool-mkspiffs.piopm ${WRKSRC}
+	${CP} ${FILESDIR}/tool-mklittlefs.piopm ${WRKSRC}
+	${REINPLACE_CMD} \
+		-e 's,%%EQT_PIO_VERSION%%,${EQT_PIO_VERSION},' \
+		${WRKSRC}/toolchain-xtensa.piopm \
+		${WRKSRC}/tool-esptool.piopm \
+		${WRKSRC}/tool-mkspiffs.piopm \
+		${WRKSRC}/tool-mklittlefs.piopm
+	${INSTALL_DATA} ${WRKSRC}/toolchain-xtensa.piopm ${STAGEDIR}${EQT_DESTDIR}/xtensa-lx106-elf/.piopm
+	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/mklittlefs/.piopm
+	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/mkspiffs/.piopm
+	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/esptool/.piopm
 
 # TODO
 # * use tag instead of EQT_GITREF
