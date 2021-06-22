@@ -1,8 +1,12 @@
+esp-quick-toolchain-gcc101/mkspiffs/.piopm
 esp-quick-toolchain-gcc101/mkspiffs/package.json
 esp-quick-toolchain-gcc101/mkspiffs/mkspiffs
+esp-quick-toolchain-gcc101/mklittlefs/.piopm
 esp-quick-toolchain-gcc101/mklittlefs/package.json
 esp-quick-toolchain-gcc101/mklittlefs/mklittlefs
+esp-quick-toolchain-gcc101/esptool/.piopm
 esp-quick-toolchain-gcc101/esptool/esptool
+esp-quick-toolchain-gcc101/xtensa-lx106-elf/.piopm
 esp-quick-toolchain-gcc101/xtensa-lx106-elf/package.json
 esp-quick-toolchain-gcc101/xtensa-lx106-elf/bin/xtensa-lx106-elf-addr2line
 esp-quick-toolchain-gcc101/xtensa-lx106-elf/bin/xtensa-lx106-elf-ar
