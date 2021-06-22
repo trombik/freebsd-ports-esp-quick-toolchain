@@ -1,7 +1,7 @@
 {
   "type": "tool",
   "name": "tool-mklittlefs",
-  "version": "5.100200.210606",
+  "version": "%%EQT_PIO_VERSION%%",
   "spec": {
     "owner": "platformio",
     "name": "tool-mklittlefs",
