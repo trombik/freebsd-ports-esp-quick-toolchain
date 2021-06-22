@@ -201,9 +201,9 @@ do-install:
 		${WRKSRC}/tool-mkspiffs.piopm \
 		${WRKSRC}/tool-mklittlefs.piopm
 	${INSTALL_DATA} ${WRKSRC}/toolchain-xtensa.piopm ${STAGEDIR}${EQT_DESTDIR}/xtensa-lx106-elf/.piopm
-	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/mklittlefs/.piopm
-	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/mkspiffs/.piopm
 	${INSTALL_DATA} ${WRKSRC}/tool-esptool.piopm ${STAGEDIR}${EQT_DESTDIR}/esptool/.piopm
+	${INSTALL_DATA} ${WRKSRC}/tool-mklittlefs.piopm ${STAGEDIR}${EQT_DESTDIR}/mklittlefs/.piopm
+	${INSTALL_DATA} ${WRKSRC}/tool-mkspiffs.piopm ${STAGEDIR}${EQT_DESTDIR}/mkspiffs/.piopm
 
 # TODO
 # * use tag instead of EQT_GITREF
