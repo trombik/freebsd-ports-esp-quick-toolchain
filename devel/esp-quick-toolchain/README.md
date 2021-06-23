@@ -12,7 +12,6 @@ To build Arduino projects, you need this.
   3.0.0
 * `portlint` complains about `autoconf` and `automake`, but `USES+=autoreconf`
   is not what I need
-* still beta
 
 ## Usage in `platformio` projects
 
