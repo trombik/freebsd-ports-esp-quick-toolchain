@@ -33,7 +33,7 @@ BUILD_DEPENDS=	bash:shells/bash \
 
 USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 # use FLAVORS so that different versions of tool-chain can be installed.
-FLAVORS=	gcc101 gcc102
+FLAVORS=	gcc101 gcc102 gcc103
 FLAVOR?=	${FLAVORS:[1]}
 
 # the upstream
@@ -133,6 +133,13 @@ EQT_GCC_VERSION=	10.2
 EQT_GCC_VERSION_FULL=	10.2.0
 EQT_PIO_VERSION=	5.100200.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.2.0
+EQT_GITREF_BINUTILS=	binutils-2_32
+EQT_BINUTILS_DIR=	binutils-gdb-gnu
+.elif ${FLAVOR} == gcc103
+EQT_GCC_VERSION=	10.3
+EQT_GCC_VERSION_FULL=	10.3.0
+EQT_PIO_VERSION=	5.100300.${EQT_STAMP}
+EQT_GITREF_GCC=	releases/gcc-10.3.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
 .endif
