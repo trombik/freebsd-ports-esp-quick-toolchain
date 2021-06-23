@@ -101,8 +101,10 @@ EQT_GITREF_LWIP2=	STABLE-2_1_2_RELEASE
 
 gcc101_PKGNAMESUFFIX=	-${FLAVOR}
 gcc102_PKGNAMESUFFIX=	-${FLAVOR}
-gcc101_PLIST= ${.CURDIR}/pkg-plist.gcc101
-gcc102_PLIST= ${.CURDIR}/pkg-plist.gcc102
+gcc103_PKGNAMESUFFIX=	-${FLAVOR}
+gcc101_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
+gcc102_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
+gcc103_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
 
 # XXX timestamp of the build. see the release page at:
