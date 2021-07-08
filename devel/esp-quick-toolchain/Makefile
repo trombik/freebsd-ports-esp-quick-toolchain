@@ -159,7 +159,6 @@ EQT_GITREF_BINUTILS=	2ae0bdd
 EQT_BINUTILS_DIR=	binutils-gdb
 GH_TUPLE+=	earlephilhower:gcc-xtensa:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc \
 	earlephilhower:binutils-gdb-xtensa:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
-CONFIGURE_ARGS+=	--disable-werror
 EQT_STRIP_FILES=	\
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/install-tools/fixincl \
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/liblto_plugin.so.0 \
@@ -190,7 +189,7 @@ post-extract:
 post-patch:
 .if ${FLAVOR} == gcc48
 	# when development is true, `-Werror` is enabled and the build fails.
-	(cd ${WRKSRC} && patch -f < ${FILESDIR}/gcc48-patch-repo_binutils-gdb_bfd_development.sh)
+	(cd ${WRKSRC} && ${PATCH} -f < ${FILESDIR}/gcc48-patch-repo_binutils-gdb_bfd_development.sh)
 .endif
 
 pre-configure:
