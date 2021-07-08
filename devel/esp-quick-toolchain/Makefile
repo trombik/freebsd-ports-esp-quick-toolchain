@@ -189,7 +189,7 @@ post-extract:
 post-patch:
 .if ${FLAVOR} == gcc48
 	# when development is true, `-Werror` is enabled and the build fails.
-	(cd ${WRKSRC} && patch -f < ${FILESDIR}/gcc48-patch-repo_binutils-gdb_bfd_development.sh)
+	(cd ${WRKSRC} && ${PATCH} -f < ${FILESDIR}/gcc48-patch-repo_binutils-gdb_bfd_development.sh)
 .endif
 
 pre-configure:
