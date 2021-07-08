@@ -153,6 +153,30 @@
  	touch $@
  
  # Apply our patches
+@@ -398,19 +425,19 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+ 	echo STAGE: $@
+ 	for p in $(PATCHDIR)/gcc-*.patch $(PATCHDIR)/gcc$(GCC)/gcc-*.patch; do \
+ 	    test -r "$$p" || continue ; \
+-	    (cd $(REPODIR)/$(GCC_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
++	    (cd $(REPODIR)/$(GCC_DIR); echo "---- $$p:"; patch -f -p1 < $$p) ; \
+ 	done > $(call log,$@) 2>&1
+ 	for p in $(PATCHDIR)/bin-*.patch; do \
+ 	    test -r "$$p" || continue ; \
+-	    (cd $(REPODIR)/$(BINUTILS_DIR); echo "---- $$p:"; patch -s -p1 < $$p) ; \
++	    (cd $(REPODIR)/$(BINUTILS_DIR); echo "---- $$p:"; patch -f -p1 < $$p) ; \
+ 	done >> $(call log,$@) 2>&1
+ 	for p in $(PATCHDIR)/lib-*.patch; do \
+ 	    test -r "$$p" || continue ; \
+-	    (cd $(REPODIR)/newlib; echo "---- $$p: "; patch -s -p1 < $$p) ; \
++	    (cd $(REPODIR)/newlib; echo "---- $$p: "; patch -f -p1 < $$p) ; \
+ 	done >> $(call log,$@) 2>&1
+ 	for p in $(PATCHDIR)/mkspiffs/$(MKSPIFFS_BRANCH)*.patch; do \
+ 	    test -r "$$p" || continue ; \
+-	    (cd $(REPODIR)/mkspiffs; echo "---- $$p: "; patch -s -p1 < $$p) ; \
++	    (cd $(REPODIR)/mkspiffs; echo "---- $$p: "; patch -f -p1 < $$p) ; \
+ 	done >> $(call log,$@) 2>&1
+ 	# Dirty-force HAL definition to binutils and gcc
+ 	for ow in $(REPODIR)/$(GCC_DIR)/include/xtensa-config.h $(REPODIR)/$(BINUTILS_DIR)/include/xtensa-config.h; do \
 @@ -490,34 +517,35 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	echo STAGE: $@
  	rm -rf $(call arena,$@)/hal > $(call log,$@) 2>&1
