@@ -159,7 +159,6 @@ EQT_GITREF_BINUTILS=	2ae0bdd
 EQT_BINUTILS_DIR=	binutils-gdb
 GH_TUPLE+=	earlephilhower:gcc-xtensa:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc \
 	earlephilhower:binutils-gdb-xtensa:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
-CONFIGURE_ARGS+=	--disable-werror
 EQT_STRIP_FILES=	\
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/install-tools/fixincl \
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/liblto_plugin.so.0 \
