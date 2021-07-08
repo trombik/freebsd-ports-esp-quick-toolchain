@@ -33,7 +33,7 @@ BUILD_DEPENDS=	bash:shells/bash \
 
 USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 # use FLAVORS so that different versions of tool-chain can be installed.
-FLAVORS=	gcc101 gcc102 gcc103
+FLAVORS=	gcc101 gcc102 gcc103 gcc48
 FLAVOR?=	${FLAVORS:[1]}
 
 # the upstream
@@ -52,8 +52,6 @@ MAKE_ARGS+=	GCC=${EQT_GCC_VERSION} GHUSER=${EQT_GHUSER} GHTOKEN=dummy
 ALL_TARGET=	freebsd
 GH_TUPLE=	\
 	${EQT_GHUSER}:${PORTNAME}:${EQT_GITREF} \
-	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
-	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR} \
 	${EQT_GHUSER}:newlib-xtensa:${EQT_GITREF_NEWLIB}:src_newlib_xtensa/repo/newlib \
 	${EQT_GHUSER}:lx106-hal:${EQT_GITREF_LX106_HAL}:src_lx106_hal/repo/lx106-hal \
 	${EQT_GHUSER}:mkspiffs:${EQT_GITREF_MKSPIFFS}:src_mkspiffs/repo/mkspiffs \
@@ -102,9 +100,11 @@ EQT_GITREF_LWIP2=	STABLE-2_1_2_RELEASE
 gcc101_PKGNAMESUFFIX=	-${FLAVOR}
 gcc102_PKGNAMESUFFIX=	-${FLAVOR}
 gcc103_PKGNAMESUFFIX=	-${FLAVOR}
+gcc48_PKGNAMESUFFIX=	-${FLAVOR}
 gcc101_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 gcc102_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 gcc103_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
+gcc48_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
 
 # XXX timestamp of the build. see the release page at:
@@ -130,6 +130,8 @@ EQT_PIO_VERSION=	5.100100.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.1.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
+GH_TUPLE+=	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
+	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
 .elif ${FLAVOR} == gcc102
 EQT_GCC_VERSION=	10.2
 EQT_GCC_VERSION_FULL=	10.2.0
@@ -137,6 +139,8 @@ EQT_PIO_VERSION=	5.100200.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.2.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
+GH_TUPLE+=	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
+	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
 .elif ${FLAVOR} == gcc103
 EQT_GCC_VERSION=	10.3
 EQT_GCC_VERSION_FULL=	10.3.0
@@ -144,6 +148,26 @@ EQT_PIO_VERSION=	5.100300.${EQT_STAMP}
 EQT_GITREF_GCC=	releases/gcc-10.3.0
 EQT_GITREF_BINUTILS=	binutils-2_32
 EQT_BINUTILS_DIR=	binutils-gdb-gnu
+GH_TUPLE+=	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
+	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
+.elif ${FLAVOR} == gcc48
+EQT_GCC_VERSION=	4.8
+EQT_GCC_VERSION_FULL=	4.8.2
+EQT_PIO_VERSION=	2.40802.200502
+EQT_GITREF_GCC=	d230f43
+EQT_GITREF_BINUTILS=	2ae0bdd
+EQT_BINUTILS_DIR=	binutils-gdb
+GH_TUPLE+=	earlephilhower:gcc-xtensa:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc \
+	earlephilhower:binutils-gdb-xtensa:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
+CONFIGURE_ARGS+=	--disable-werror
+EQT_STRIP_FILES=	\
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/install-tools/fixincl \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/liblto_plugin.so.0 \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/lto-wrapper \
+	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/gengtype \
+	xtensa-lx106-elf/bin/g++ \
+	xtensa-lx106-elf/bin/c++ \
+	xtensa-lx106-elf/bin/gcc
 .endif
 EQT_DESTDIR=	${PREFIX}/${PORTNAME}-${FLAVOR}
 
@@ -156,6 +180,18 @@ post-extract:
 	# XXX applied in:
 	# https://github.com/earlephilhower/mkspiffs/commit/24124efae6b82621bbf66ce6fb9740e08a07f51b
 	${RM} ${WRKSRC}/patches/mkspiffs/0.2.0-makefile.patch
+.if ${FLAVOR} == gcc48
+	# XXX the patch does not apply to GCC 4.8 (the file to be patched does
+	# not exist). the commit log mentions GCC 5.2.
+	# https://github.com/earlephilhower/esp-quick-toolchain/commit/a00ad97e921ee9e0ed589821f2b0fc829d9ec6c3
+	${RM} ${WRKSRC}/patches/gcc-001-jump-tables-in-text-section-earlephilhower.patch
+.endif
+
+post-patch:
+.if ${FLAVOR} == gcc48
+	# when development is true, `-Werror` is enabled and the build fails.
+	(cd ${WRKSRC} && patch -f < ${FILESDIR}/gcc48-patch-repo_binutils-gdb_bfd_development.sh)
+.endif
 
 pre-configure:
 	@${REINPLACE_CMD} \
