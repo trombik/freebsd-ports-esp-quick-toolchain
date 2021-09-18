@@ -1,8 +1,6 @@
 # TODOs
 #
-# * support "Re-run with Terminal Access"
-#   https://medium.com/cirruslabs/introducing-cirrus-terminal-a-simple-way-to-get-ssh-like-access-to-your-tasks-1def0449065d
-# * publish packages when releasing
+# * publish packages on GitHub Pages when releasing
 # * support quaterly/latest ports
 #
 # known issues
@@ -37,13 +35,13 @@ setup_task:
   # increase timeout_in. in most cases, build will not finish in 60m, which is
   # the default. the default is not documented at
   # https://cirrus-ci.org/guide/writing-tasks/, but at https://cirrus-ci.org/faq/
-  timeout_in: 240m
+  # the max timeout_in is two hours.
+  timeout_in: 120m
   define_common_variables_script: |
 
     # define common variavles used in *_script. remember to export variables
     # at the end of this script.
-    PD_WORKDIR="/tmp"
-
+    PD_WORKDIR="${CIRRUS_WORKING_DIR}"
     PD_BASEFS="${PD_WORKDIR}/poudriere"
     PD_CCACHE_DIR=/var/cache/ccache
     PD_REQUIRED_PACKAGES="ports-mgmt/poudriere-devel ports-mgmt/portshaker ports-mgmt/portshaker-config git-lite"
@@ -124,7 +122,7 @@ setup_task:
     DISTFILES_CACHE=${PD_BASEFS}/ports/${PD_PORTS_NAME}/distfiles
     CCACHE_DIR=${PD_CCACHE_DIR}
 
-    # increase MAX_FILES. some port tries to modify ulimit during the
+    # increase MAX_FILES. crosstool-NG.sh tries to modify ulimit during the
     # build, which is not allowed.
     #
     # crosstool-NG.sh: line 112: ulimit: open files: cannot modify limit: Operation not permitted
@@ -169,9 +167,6 @@ setup_task:
     # ensure DISTFILES_CACHE exists
     mkdir -p "${PD_BASEFS}/ports/${PD_PORTS_NAME}/distfiles"
 
-  built_packages_cache:
-    folder: ${PD_BASEFS}/data/packages
-
   create_jail_script: |
 
     # cannot cache jails at the moment. see:
@@ -212,7 +207,7 @@ setup_task:
       # do NOT quote, wildcard
       for F in ${PD_BASEFS}/data/logs/bulk/${PD_BUILD_NAME}/latest/logs/errors/*.log; do
         echo "${F}"
-        cat ${F}
+        cat "${F}"
       done
   always:
     copy_log_script: |
@@ -221,3 +216,50 @@ setup_task:
       cp ${PD_BASEFS}/data/logs/bulk/${PD_BUILD_NAME}/latest/logs/*.log "${CIRRUS_WORKING_DIR}/logs/"
     log_artifacts:
       path: "logs/*.log"
+      type: text/plain
+
+generate_repo_task:
+  environment:
+    PD_REPO_KEY: ENCRYPTED[55405781c279459db5e73e1f85a4b93e8ff65c40750e0a47fc621de48e1c3a84c794a5c7eb867ce0c4c25b3b7d813b1d]
+  depends_on:
+    - build
+  matrix:
+    - compute_engine_instance:
+        image_project: freebsd-org-cloud-dev
+        image: family/freebsd-13-0
+        platform: freebsd
+
+  download_packages_script: |
+    fetch -o "${CIRRUS_WORKING_DIR}/packages.zip" \
+      "https://api.cirrus-ci.com/v1/artifact/build/${CIRRUS_BUILD_ID}/packages.zip"
+    (cd ${CIRRUS_WORKING_DIR} && unzip packages.zip)
+
+  generete_repo_script: |
+    if [ "${CIRRUS_REPO_OWNER}" = "trombik" ]; then
+      touch repo.key
+      chmod 0400 repo.key
+      echo "${PD_REPO_KEY}" > repo.key
+    fi
+    for D in ${CIRRUS_WORKING_DIR}/packages/*/* ; do
+      if [ -d "${D}" ]; then
+        ls -alR  "${D}"
+        if [ -f repo.key ]; then
+          echo "Create a signed repo"
+          pkg repo "${D}" repo.key
+        else
+          echo "Create a repo"
+          pkg repo "${D}"
+        fi
+        ls -alR  "${D}"
+      fi
+    done
+    mv "${CIRRUS_WORKING_DIR}/packages" "${CIRRUS_WORKING_DIR}/repos"
+
+  repos_artifacts:
+
+    # XXX cirrus-ci does not upload directories
+    paths:
+      - "repos/*"
+      - "repos/*/*"
+      - "repos/*/*/*"
+      - "repos/*/*/*/*"
