@@ -39,6 +39,36 @@ build_task:
   timeout_in: 120m
   define_common_variables_script: |
 
+    # set this to yes to allow MAKE_JOBS (parallel make)
+    PD_ALLOW_MAKE_JOBS=no
+
+    # create a list of all package origins and package names in the repository
+    PD_ALL_ORIGIN=`echo */* | sed -e 's|/[[:space:]]| |g' -e 's|/$||'`
+
+    for D in ${PD_ALL_ORIGIN}; do
+      PD_FLAVORS=`make -V FLAVORS -C "${D}"`
+      echo "PD_FLAVORS=${PD_FLAVORS}"
+      if [ "x${PD_FLAVORS}" != "x" ]; then
+        for F in ${PD_FLAVORS}; do
+          echo "FLAVOR=${F}"
+          P=`make -V PKGNAME -C "${D}" FLAVOR="${F}"`
+          echo "${P}"
+          PD_ALL_PACKAGES="${PD_ALL_PACKAGES} ${P}"
+          echo "${PD_ALL_PACKAGES}"
+        done
+      else
+        P=`make -V PKGNAME -C "${D}"`
+        echo "${P}"
+        PD_ALL_PACKAGES="${PD_ALL_PACKAGES} ${P}"
+        echo "${PD_ALL_PACKAGES}"
+      fi
+    done
+
+    PD_ALLOW_MAKE_JOBS_PACKAGES=""
+    if [ "x${PD_ALLOW_MAKE_JOBS}" = "xyes" ]; then
+      PD_ALLOW_MAKE_JOBS_PACKAGES="${PD_ALL_PACKAGES}"
+    fi
+
     # define common variavles used in *_script. remember to export variables
     # at the end of this script.
     PD_WORKDIR="/tmp"
@@ -78,6 +108,10 @@ build_task:
     # not allowed. value should NOT be quoted (i.e. NOT `foo="bar buz"`. use
     # `foo=bar buz` instead).
     cat << __EOF__ >> ${CIRRUS_ENV}
+    PD_ALL_ORIGIN=${PD_ALL_ORIGIN}
+    PD_ALL_PACKAGES=${PD_ALL_PACKAGES}
+    PD_ALLOW_MAKE_JOBS=${PD_ALLOW_MAKE_JOBS}
+    PD_ALLOW_MAKE_JOBS_PACKAGES=${PD_ALLOW_MAKE_JOBS_PACKAGES}
     PD_WORKDIR=${PD_WORKDIR}
     PD_BASEFS=${PD_BASEFS}
     PD_CCACHE_DIR=${PD_CCACHE_DIR}
@@ -121,6 +155,8 @@ build_task:
     FLAVOR_DEFAULT_ALL=yes
     DISTFILES_CACHE=${PD_BASEFS}/ports/${PD_PORTS_NAME}/distfiles
     CCACHE_DIR=${PD_CCACHE_DIR}
+    ALLOW_MAKE_JOBS=${PD_ALLOW_MAKE_JOBS}
+    ALLOW_MAKE_JOBS_PACKAGES="${PD_ALLOW_MAKE_JOBS_PACKAGES}"
 
     # increase MAX_FILES. crosstool-NG.sh tries to modify ulimit during the
     # build, which is not allowed.
@@ -186,9 +222,6 @@ build_task:
     # task"
     mkdir -p "${CIRRUS_WORKING_DIR}/logs"
 
-    # create a list of all packages in the repository
-    PD_ALL_ORIGIN=`echo */* | sed -e 's|/[[:space:]]| |g' -e 's|/$||'`
-
     poudriere ports -l
     poudriere jail -l
 
@@ -200,6 +233,26 @@ build_task:
     # depends. it saves time by skipping depended builds. -b flag requires
     # ports-mgmt/poudriere-devel.
     poudriere bulk -j "${PD_JAIL_NAME}" -p "${PD_PORTS_NAME}" -b "${PD_FREEBSD_PACKAGE_BRANCH}" -t -C ${PD_ALL_ORIGIN}
+  copy_packages_script: |
+
+    __PD_SRC="${PD_BASEFS}/data/packages/${PD_BUILD_NAME}/.latest/All"
+    __PD_DEST="packages/${PD_JAIL_NAME}/${PD_BUILD_NAME}/All"
+
+    ls -alR "${__PD_SRC}"
+    mkdir -p "${__PD_DEST}"
+    for P in ${PD_ALL_PACKAGES}; do
+      ls -al ${__PD_SRC}/${P}*
+      cp ${__PD_SRC}/${P}*  "${__PD_DEST}"
+    done
+    ls -alR "${__PD_DEST}"
+    du -cksh "${__PD_DEST}"
+
+  packages_artifacts:
+
+    # can be downloaded at:
+    # https://api.cirrus-ci.com/v1/artifact/build/<CIRRUS_BUILD_ID>/<ARTIFACTS_NAME>.zip
+    path: "packages/${PD_JAIL_NAME}/${PD_BUILD_NAME}/All/*"
+    type: application/octet-stream
 
   on_failure:
     show_error_log_script: |
@@ -220,6 +273,11 @@ build_task:
 
 generate_repo_task:
   environment:
+
+    # use encrypted private key on cirrus-ci.
+    #
+    # XXX you need to create your own private and public keys, and upload the
+    # private key to cirrus-ci. see also pkg-repo(8)
     PD_REPO_KEY: ENCRYPTED[55405781c279459db5e73e1f85a4b93e8ff65c40750e0a47fc621de48e1c3a84c794a5c7eb867ce0c4c25b3b7d813b1d]
   depends_on:
     - build
@@ -235,10 +293,18 @@ generate_repo_task:
     (cd ${CIRRUS_WORKING_DIR} && unzip packages.zip)
 
   generete_repo_script: |
-    if [ "${CIRRUS_REPO_OWNER}" = "trombik" ]; then
+
+    # XXX change this to your GitHub account
+    PD_REPO_OWNER="trombik"
+
+    # sign the repo only if CIRRUS_REPO_OWNER is PD_REPO_OWNER
+    if [ "${CIRRUS_REPO_OWNER}" = "${PD_REPO_OWNER}" ]; then
+      echo "Sign the repo"
       touch repo.key
       chmod 0400 repo.key
       echo "${PD_REPO_KEY}" > repo.key
+    else
+      echo "Not sign the repo"
     fi
     for D in ${CIRRUS_WORKING_DIR}/packages/*/* ; do
       if [ -d "${D}" ]; then
@@ -263,3 +329,130 @@ generate_repo_task:
       - "repos/*/*"
       - "repos/*/*/*"
       - "repos/*/*/*/*"
+
+install_packages_task:
+  depends_on:
+    - generate_repo
+  matrix:
+    - compute_engine_instance:
+        image_project: freebsd-org-cloud-dev
+        image: family/freebsd-13-0
+        platform: freebsd
+    - compute_engine_instance:
+        image_project: freebsd-org-cloud-dev
+        image: family/freebsd-12-2
+        platform: freebsd
+
+  define_common_variables_script: |
+
+    # e.g. 122
+    PD_VERSION_SHORT=`uname -r | sed -e 's/-.*//' -e 's/\.//'`
+
+    # e.g. amd64
+    PD_MACHINE=`uname -m`
+
+    # e.g. 12.2-RELEASE
+    PD_RELEASE_NAME=`uname -r | sed -e 's/-p.*//'`
+
+    # e.g. 122amd64
+    PD_JAIL_NAME="${PD_VERSION_SHORT}${PD_MACHINE}"
+    PD_PORTS_NAME="default"
+
+    # e.g 122amd64-default
+    PD_BUILD_NAME="${PD_JAIL_NAME}-${PD_PORTS_NAME}"
+
+    cat << __EOF__ >> ${CIRRUS_ENV}
+    PD_VERSION_SHORT=${PD_VERSION_SHORT}
+    PD_MACHINE=${PD_MACHINE}
+    PD_RELEASE_NAME=${PD_RELEASE_NAME}
+    PD_JAIL_NAME=${PD_JAIL_NAME}
+    PD_PORTS_NAME=${PD_PORTS_NAME}
+    PD_BUILD_NAME=${PD_BUILD_NAME}
+    __EOF__
+    cat ${CIRRUS_ENV}
+
+  show_env_script: |
+    env | sort
+
+  download_repos_script: |
+    fetch -o ${CIRRUS_WORKING_DIR}/repos.zip \
+      "https://api.cirrus-ci.com/v1/artifact/build/${CIRRUS_BUILD_ID}/repos.zip"
+    (cd ${CIRRUS_WORKING_DIR} && unzip repos.zip)
+    ls -alR "${CIRRUS_WORKING_DIR}/repos"
+
+  setup_pkg_conf_script: |
+
+    # XXX change this to your GitHub account
+    PD_REPO_OWNER="trombik"
+
+    # create FINGERPRINTS only if repo owner is me.
+    PD_FINGERPRINTS="NONE"
+    if [ "${CIRRUS_REPO_OWNER}" = "${PD_REPO_OWNER}" ]; then
+      echo "Create FINGERPRINTS"
+      PD_FINGERPRINTS="/usr/local/etc/pkg/fingerprints/local"
+      mkdir -p "${PD_FINGERPRINTS}"
+      cat << __EOF__ > "${PD_FINGERPRINTS}/trusted"
+    -----BEGIN PUBLIC KEY-----
+    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsiXZS851++ZaUFPO5hgR
+    iVMzGoRcunmi+Uk2r9bHXSL4CL45iBz+tvELjsVZtZWshbfgAvLtTos3LrLt+04n
+    VEmu1f+kRVnKzuI1ruM7ACmdr/HEYAcf2e0IpHhy9jQIUY/gL1PsajABOOG4O4FA
+    Eng8Ojfn1h1Ryth0S18dT71rIeFAQoZwXln+VjTM+Ppn5YXFZQJwF/ioIh7dPK6f
+    ij/tmbUVb+Aqy+zn8E/P66SZ8ZL/FT6FZ9w5a7Z6QzJoQlqEWql/QNe8qdrJX2Ya
+    T8ra5eCzWJhgYAoBjJN8mnnTqQ1gZnKEiSrzO1OU6gPATTJnL/iFQ4CCLKYd8oYE
+    kQIDAQAB
+    -----END PUBLIC KEY-----
+    __EOF__
+
+    else
+      echo "Do NOT create FINGERPRINTS"
+    fi
+    mkdir -p /usr/local/etc/pkg/repos
+    cat << __EOF__ > /usr/local/etc/pkg/repos/local.conf
+    local: {
+      URL: "file:///${CIRRUS_WORKING_DIR}/repos/${PD_JAIL_NAME}/${PD_BUILD_NAME}"
+      ENABLED: yes
+      FINGERPRINTS: "${PD_FINGERPRINTS}"
+    }
+    __EOF__
+    cat /usr/local/etc/pkg/repos/local.conf
+
+  install_packages_script: |
+
+    # create a list of all packages in the repository, and install them.
+    PD_ALL_ORIGIN=`echo */* | sed -e 's|/[[:space:]]| |g' -e 's|/$||'`
+    echo "PD_ALL_ORIGIN=${PD_ALL_ORIGIN}"
+
+    # install ${PD_ALL_ORIGIN}
+    PD_ALL_PACKAGES=""
+    for D in ${PD_ALL_ORIGIN}; do
+      PD_FLAVORS=`make -V FLAVORS -C "${D}"`
+      echo "PD_FLAVORS=${PD_FLAVORS}"
+      if [ "x${PD_FLAVORS}" != "x" ]; then
+        for F in ${PD_FLAVORS}; do
+          echo "FLAVOR=${F}"
+          P=`make -V PKGNAME -C "${D}" FLAVOR="${F}"`
+          echo "${P}"
+          PD_ALL_PACKAGES="${PD_ALL_PACKAGES} ${P}"
+          echo "${PD_ALL_PACKAGES}"
+        done
+      else
+        P=`make -V PKGNAME -C "${D}"`
+        echo "${P}"
+        PD_ALL_PACKAGES="${PD_ALL_PACKAGES} ${P}"
+        echo "${PD_ALL_PACKAGES}"
+      fi
+    done
+    pkg install -y ${PD_ALL_PACKAGES}
+
+  test_script: |
+
+    # here is the test. add your own test here.
+    #
+    # a simple test to see if the binaries work
+    PD_FLAVORS=`make -C devel/esp-quick-toolchain -V FLAVORS`
+    PD_GCC_FILE_NAME="xtensa-lx106-elf-gcc"
+    for F in ${PD_FLAVORS}; do
+      ls -al /usr/local/esp-quick-toolchain-${F}/xtensa-lx106-elf/bin
+      file /usr/local/esp-quick-toolchain-${F}/xtensa-lx106-elf/bin/${PD_GCC_FILE_NAME}
+      /usr/local/esp-quick-toolchain-${F}/xtensa-lx106-elf/bin/${PD_GCC_FILE_NAME} --version
+    done
