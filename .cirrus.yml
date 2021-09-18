@@ -13,7 +13,7 @@ env:
   PATH: /sbin:/bin:/usr/sbin:/usr/bin:/usr/local/sbin:/usr/local/bin
   USER: root
 
-setup_task:
+build_task:
   matrix:
     # XXX use compute_engine_instance, instead of freebsd_instance, which is a
     # syntactic sugar. with freebsd_instance, disk parameter is ignored.
@@ -41,7 +41,7 @@ setup_task:
 
     # define common variavles used in *_script. remember to export variables
     # at the end of this script.
-    PD_WORKDIR="${CIRRUS_WORKING_DIR}"
+    PD_WORKDIR="/tmp"
     PD_BASEFS="${PD_WORKDIR}/poudriere"
     PD_CCACHE_DIR=/var/cache/ccache
     PD_REQUIRED_PACKAGES="ports-mgmt/poudriere-devel ports-mgmt/portshaker ports-mgmt/portshaker-config git-lite"
