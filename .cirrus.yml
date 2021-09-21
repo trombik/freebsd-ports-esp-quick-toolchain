@@ -14,6 +14,7 @@ env:
   USER: root
 
 build_task:
+  skip: "changesIncludeOnly('**.md')"
   matrix:
     # XXX use compute_engine_instance, instead of freebsd_instance, which is a
     # syntactic sugar. with freebsd_instance, disk parameter is ignored.
@@ -272,6 +273,7 @@ build_task:
       type: text/plain
 
 generate_repo_task:
+  skip: "changesIncludeOnly('**.md')"
   environment:
 
     # use encrypted private key on cirrus-ci.
@@ -331,6 +333,7 @@ generate_repo_task:
       - "repos/*/*/*/*"
 
 install_packages_task:
+  skip: "changesIncludeOnly('**.md')"
   depends_on:
     - generate_repo
   matrix:
@@ -391,17 +394,7 @@ install_packages_task:
       echo "Create FINGERPRINTS"
       PD_FINGERPRINTS="/usr/local/etc/pkg/fingerprints/local"
       mkdir -p "${PD_FINGERPRINTS}"
-      cat << __EOF__ > "${PD_FINGERPRINTS}/trusted"
-    -----BEGIN PUBLIC KEY-----
-    MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAsiXZS851++ZaUFPO5hgR
-    iVMzGoRcunmi+Uk2r9bHXSL4CL45iBz+tvELjsVZtZWshbfgAvLtTos3LrLt+04n
-    VEmu1f+kRVnKzuI1ruM7ACmdr/HEYAcf2e0IpHhy9jQIUY/gL1PsajABOOG4O4FA
-    Eng8Ojfn1h1Ryth0S18dT71rIeFAQoZwXln+VjTM+Ppn5YXFZQJwF/ioIh7dPK6f
-    ij/tmbUVb+Aqy+zn8E/P66SZ8ZL/FT6FZ9w5a7Z6QzJoQlqEWql/QNe8qdrJX2Ya
-    T8ra5eCzWJhgYAoBjJN8mnnTqQ1gZnKEiSrzO1OU6gPATTJnL/iFQ4CCLKYd8oYE
-    kQIDAQAB
-    -----END PUBLIC KEY-----
-    __EOF__
+      cat .fingerprint > "${PD_FINGERPRINTS}/trusted"
 
     else
       echo "Do NOT create FINGERPRINTS"
@@ -456,3 +449,60 @@ install_packages_task:
       file /usr/local/esp-quick-toolchain-${F}/xtensa-lx106-elf/bin/${PD_GCC_FILE_NAME}
       /usr/local/esp-quick-toolchain-${F}/xtensa-lx106-elf/bin/${PD_GCC_FILE_NAME} --version
     done
+
+publish_task:
+  skip: $CIRRUS_TAG == ""
+  depends_on:
+    - test
+  matrix:
+    - compute_engine_instance:
+        image_project: freebsd-org-cloud-dev
+        image: family/freebsd-13-0
+        platform: freebsd
+  environment:
+    github_api_token: ENCRYPTED[ad04d3fe5c7b2e6875e799e064702e945b35224363061b95a82193cfb528c6f6f785a4bb4b56747c26435d35d17b5325]
+  publish_artifact_script: |
+    filename="repos.zip"
+    fetch -o ${CIRRUS_WORKING_DIR}/repos.zip \
+      "https://api.cirrus-ci.com/v1/artifact/build/${CIRRUS_BUILD_ID}/${filename}"
+
+    # Author: Stefan Buck
+    # License: MIT
+    # https://gist.github.com/stefanbuck/ce788fee19ab6eb0b4447a85fc99f447
+    #
+    # upload-github-release-asset.sh github_api_token=TOKEN owner=stefanbuck repo=playground tag=v0.1.0 filename=./build.zip
+    echo "CIRRUS_TAG=${CIRRUS_TAG}"
+    if [ "x${CIRRUS_TAG}" != "x" ]; then
+      GH_API="https://api.github.com"
+      GH_REPO="$GH_API/repos/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}"
+      GH_RELEASES="$GH_REPO/releases"
+      GH_TAGS="$GH_RELEASES/tags/${CIRRUS_TAG}"
+      AUTH="Authorization: token $github_api_token"
+
+      if test "$tag" == "LATEST"; then
+        GH_TAGS="$GH_REPO/releases/latest"
+      fi
+
+      # Validate token.
+      curl -o /dev/null -sH "$AUTH" $GH_REPO || { echo "Error: Invalid repo, token or network issue!";  exit 1; }
+
+      # Create a release from tag if it does not exist.
+      curl -s -d "{\"tag_name\":\"$tag\"}" -H "$AUTH" "$GH_RELEASES" > /dev/null
+
+      # Read asset tags.
+      response=$(curl -sH "$AUTH" $GH_TAGS)
+
+      # Get ID of the asset based on given filename.
+      eval "$(echo "$response" | grep -m 1 "id.:" | grep -w id | tr : = | tr -cd '[[:alnum:]]=')"
+      echo "ID=${id}"
+      [ -n "$id" ] || { echo "Error: Failed to get release id for tag: $tag"; echo "$response" | awk 'length($0)<100' >&2; exit 1; }
+
+      # Upload asset
+      echo "Uploading asset... "
+
+      # Construct url
+      GH_ASSET="https://uploads.github.com/repos/${CIRRUS_REPO_OWNER}/${CIRRUS_REPO_NAME}/releases/$id/assets?name=$(basename $filename)"
+      echo "GH_ASSET=${GH_ASSET}"
+
+      curl "$GITHUB_OAUTH_BASIC" --data-binary @"$filename" -H "$AUTH" -H "Content-Type: application/octet-stream" $GH_ASSET
+    fi
