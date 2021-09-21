@@ -193,7 +193,8 @@ build_task:
 
   ports_tree_install_script: |
     echo Updating "github:${CIRRUS_REPO_OWNER}:${CIRRUS_REPO_NAME}:${CIRRUS_BRANCH}"
-    portshaker -u "github:${CIRRUS_REPO_OWNER}:${CIRRUS_REPO_NAME}:${CIRRUS_BRANCH}"
+    ln -s "${CIRRUS_WORKING_DIR}" "/var/cache/portshaker/github_${CIRRUS_REPO_OWNER}_${CIRRUS_REPO_NAME}_${CIRRUS_BRANCH}"
+    ls -al /var/cache/portshaker
 
     # create the merged ports tree
     time -h portshaker -M
