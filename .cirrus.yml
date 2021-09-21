@@ -332,7 +332,7 @@ generate_repo_task:
       - "repos/*/*/*"
       - "repos/*/*/*/*"
 
-install_packages_task:
+test_task:
   skip: "changesIncludeOnly('**.md')"
   depends_on:
     - generate_repo
