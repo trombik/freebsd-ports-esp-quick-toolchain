@@ -1,11 +1,11 @@
 PORTNAME=	esp-quick-toolchain
-DISTVERSION=	3.0.3
+DISTVERSION=	3.0.5
 CATEGORIES=	devel
 MASTER_SITES=	\
 	GNU/gmp/:src_gmp \
 	GNU/mpfr/:src_mpfr \
 	GNU/mpc/:src_mpc \
-	http://isl.gforge.inria.fr/:src_isl \
+	https://libisl.sourceforge.io/:src_isl \
 	https://gcc.gnu.org/pub/gcc/infrastructure/:src_cloog \
 	https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/:src_libelf
 DISTFILES=	\
@@ -33,7 +33,7 @@ BUILD_DEPENDS=	bash:shells/bash \
 
 USES=	gmake makeinfo tar:bzip2 python:build shebangfix libtool iconv
 # use FLAVORS so that different versions of tool-chain can be installed.
-FLAVORS=	gcc101 gcc102 gcc103 gcc48
+FLAVORS=	gcc103 gcc48
 FLAVOR?=	${FLAVORS:[1]}
 
 # the upstream
