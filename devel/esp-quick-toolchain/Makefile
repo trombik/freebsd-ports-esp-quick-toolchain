@@ -1,5 +1,5 @@
 PORTNAME=	esp-quick-toolchain
-DISTVERSION=	3.0.5
+DISTVERSION=	3.1.0
 CATEGORIES=	devel
 MASTER_SITES=	\
 	GNU/gmp/:src_gmp \
@@ -8,6 +8,8 @@ MASTER_SITES=	\
 	https://libisl.sourceforge.io/:src_isl \
 	https://gcc.gnu.org/pub/gcc/infrastructure/:src_cloog \
 	https://github.com/earlephilhower/esp-quick-toolchain/raw/master/blobs/:src_libelf
+
+# XXX see .stage.prepgit in Makefile
 DISTFILES=	\
 	gmp-6.1.0.tar.bz2:src_gmp \
 	mpfr-3.1.4.tar.bz2:src_mpfr \
@@ -74,21 +76,23 @@ GH_TUPLE=	\
 # XXX the Makefile of ${PORTNAME} uses branches instead of specific tags or
 # commit refs.
 EQT_GITREF=	${DISTVERSION}-gcc10.3
-EQT_GITREF_NEWLIB=	e1db641e
+EQT_GITREF_NEWLIB=	ebc9675
 EQT_GITREF_LX106_HAL=	e4bcc63c
-EQT_GITREF_MKSPIFFS=	24124efa
-EQT_GITREF_MKLITTLEFS=	1ee48775
-EQT_GITREF_ESPTOOL_CK=	f80ae31d
+EQT_GITREF_MKSPIFFS=	7fefeac
+EQT_GITREF_MKLITTLEFS=	30b7fc1
+EQT_GITREF_ESPTOOL_CK=	f80ae31
 # XXX git submodules
 EQT_GITREF_SPIFFS=		f5e26c4e
 EQT_GITREF_LITTLEFS=	1863dc78
-EQT_GITREF_ARDUINO=	3.0.0
+
+# XXX https://github.com/esp8266/Arduino/releases
+EQT_GITREF_ARDUINO=	3.0.2
 # XXX git submodules of esp8266/Arduino
 EQT_GITREF_ARDUINO_ESP82XX_NONOS_LINKLAYER=	7421258
-EQT_GITREF_ARDUINO_BEARSSL_ESP8266=	c0b69df
-EQT_GITREF_ARDUINO_ESPSOFTWARESERIAL=	537b696
+EQT_GITREF_ARDUINO_BEARSSL_ESP8266=	6105635
+EQT_GITREF_ARDUINO_ESPSOFTWARESERIAL=	566809f
 EQT_GITREF_ARDUINO_LITTLEFS=	1a59954
-EQT_GITREF_ARDUINO_ESP8266SDFAT=	9f94df4
+EQT_GITREF_ARDUINO_ESP8266SDFAT=	9472c86
 EQT_GITREF_ARDUINO_PYSERIAL=	0e76347
 EQT_GITREF_ARDUINO_ESPTOOL=	4fa0bd7
 EQT_GITREF_ARDUINO_ETHERNET=	75a3c37
@@ -107,7 +111,7 @@ DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
 # https://github.com/earlephilhower/esp-quick-toolchain/releases
 # the value is the last digits in file names. an example:
 # aarch64-linux-gnu.esptool-f80ae31.210605.tar.gz
-EQT_STAMP=	210605
+EQT_STAMP=	220621
 EQT_STRIP_FILES=	\
 	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcc1plugin.so.0 \
 	lib/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/libcp1plugin.so.0 \
