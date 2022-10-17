@@ -21,14 +21,14 @@ build_task:
     # see https://github.com/cirruslabs/cirrus-ci-docs/issues/911
     - compute_engine_instance:
         image_project: freebsd-org-cloud-dev
-        image: family/freebsd-13-0
+        image: family/freebsd-13-1
         platform: freebsd
         cpu: 4
         memory: 8
         disk: 80
     - compute_engine_instance:
         image_project: freebsd-org-cloud-dev
-        image: family/freebsd-12-2
+        image: family/freebsd-12-3
         platform: freebsd
         cpu: 4
         memory: 8
@@ -80,7 +80,7 @@ build_task:
     # the branch to use for the FreeBSD ports tree.
     # see https://github.com/freebsd/freebsd-ports/branches for available
     # branches
-    PD_FREEBSD_PORTS_BRANCH="2022Q1"
+    PD_FREEBSD_PORTS_BRANCH="2022Q4"
 
     # the branch to use for the FreeBSD package tree. the build fetches
     # and installs packages required by PD_ALL_ORIGIN.
