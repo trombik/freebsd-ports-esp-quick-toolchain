@@ -97,12 +97,8 @@ EQT_GITREF_ARDUINO_UZLIB=	27e4f4c
 # see esp82xx-nonos-linklayer/makefiles/Makefile.defs
 EQT_GITREF_LWIP2=	STABLE-2_1_2_RELEASE
 
-gcc101_PKGNAMESUFFIX=	-${FLAVOR}
-gcc102_PKGNAMESUFFIX=	-${FLAVOR}
 gcc103_PKGNAMESUFFIX=	-${FLAVOR}
 gcc48_PKGNAMESUFFIX=	-${FLAVOR}
-gcc101_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
-gcc102_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 gcc103_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 gcc48_PLIST= ${.CURDIR}/pkg-plist.${FLAVOR}
 DISTINFO_FILE=	${MASTERDIR}/distinfo.${FLAVOR}
@@ -121,27 +117,7 @@ EQT_STRIP_FILES=	\
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/lto-wrapper \
 	libexec/gcc/xtensa-lx106-elf/${EQT_GCC_VERSION_FULL}/plugin/gengtype
 
-.if ${FLAVOR} == gcc101
-EQT_GCC_VERSION=	10.1
-EQT_GCC_VERSION_FULL=	10.1.0
-# pio expects semver like 5.100200.210606, which I really don't understand.
-# the minor version is GCC version, I *guess*.
-EQT_PIO_VERSION=	5.100100.${EQT_STAMP}
-EQT_GITREF_GCC=	releases/gcc-10.1.0
-EQT_GITREF_BINUTILS=	binutils-2_32
-EQT_BINUTILS_DIR=	binutils-gdb-gnu
-GH_TUPLE+=	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
-	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
-.elif ${FLAVOR} == gcc102
-EQT_GCC_VERSION=	10.2
-EQT_GCC_VERSION_FULL=	10.2.0
-EQT_PIO_VERSION=	5.100200.${EQT_STAMP}
-EQT_GITREF_GCC=	releases/gcc-10.2.0
-EQT_GITREF_BINUTILS=	binutils-2_32
-EQT_BINUTILS_DIR=	binutils-gdb-gnu
-GH_TUPLE+=	gcc-mirror:gcc:${EQT_GITREF_GCC}:src_gcc_gnu/repo/gcc-gnu \
-	bminor:binutils-gdb:${EQT_GITREF_BINUTILS}:src_binutils_gdb/repo/${EQT_BINUTILS_DIR}
-.elif ${FLAVOR} == gcc103
+.if ${FLAVOR} == gcc103
 EQT_GCC_VERSION=	10.3
 EQT_GCC_VERSION_FULL=	10.3.0
 EQT_PIO_VERSION=	5.100300.${EQT_STAMP}
