@@ -1,4 +1,4 @@
---- Makefile.orig	2021-06-06 02:39:47 UTC
+--- Makefile.orig	2023-02-24 20:51:24 UTC
 +++ Makefile
 @@ -1,4 +1,27 @@
 +BUILDENV = LINUX
@@ -28,7 +28,7 @@
  .SILENT:
  
  # General rule is that CAPITAL variables are constants and can be used
-@@ -14,7 +37,7 @@ GCC     := $(if $(GCC),$(GCC),4.8)
+@@ -14,7 +37,7 @@ PATCHDIR := $(PWD)/patches
  PWD      := $(shell pwd)
  REPODIR  := $(PWD)/repo
  PATCHDIR := $(PWD)/patches
@@ -37,7 +37,7 @@
  
  # For uploading, the GH user and PAT
  GHUSER := $(if $(GHUSER),$(GHUSER),$(shell cat .ghuser))
-@@ -214,6 +237,19 @@ RPI_TAROPT := zcf
+@@ -214,6 +237,19 @@ RPI_ASYS   := linux_armv6l
  RPI_TAREXT := tar.gz
  RPI_ASYS   := linux_armv6l
  
@@ -57,7 +57,7 @@
  # Call with $@ to get the appropriate variable for this architecture
  host   = $($(call arch,$(1))_HOST)
  ahost  = $($(call arch,$(1))_AHOST)
-@@ -238,7 +274,7 @@ install = $(PWD)/xtensa-lx106-elf$($(call arch,$(1))_E
+@@ -238,7 +274,7 @@ configure  = --prefix=$(call install,$(1))
  
  # GCC et. al configure options
  configure  = --prefix=$(call install,$(1))
@@ -66,12 +66,13 @@
  configure += --host=$(call host,$(1))
  configure += --target=xtensa-lx106-elf
  configure += --disable-shared
-@@ -290,10 +326,10 @@ endif
+@@ -290,11 +326,11 @@ setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
  # Sets the environment variables for a subshell while building
  setenv = export CFLAGS_FOR_TARGET=$(CFFT); \
           export CXXFLAGS_FOR_TARGET=$(CFFT); \
--         export CFLAGS="-I$(call install,$(1))/include -pipe"; \
-+         export CFLAGS="-I$(call install,$(1))/include $(ADDITIONALLIBPATH) -pipe"; \
+-         export CFLAGS="-I$(call install,$(1))/include -pipe -g -O2"; \
++         export CFLAGS="-I$(call install,$(1))/include $(ADDITIONALLIBPATH) -pipe -g -O2"; \
+          export CXXFLAGS="-pipe -g -O2"; \
           export LDFLAGS="-L$(call install,$(1))/lib"; \
 -         export PATH="$(call install,.stage.LINUX.stage)/bin:$${PATH}"; \
 -         export LD_LIBRARY_PATH="$(call install,.stage.LINUX.stage)/lib:$${LD_LIBRARY_PATH}"
@@ -80,7 +81,7 @@
  
  # Creates a package.json file for PlatformIO
  # Package version **must** conform with Semantic Versioning specicfication:
-@@ -308,8 +344,8 @@ makepackagejson = ( echo '{' && \
+@@ -309,8 +345,8 @@ makepackagejson = ( echo '{' && \
                      echo '}' ) > package.json
  
  # Generates a JSON fragment for an uploaded release artifact
@@ -91,7 +92,7 @@
  	   ( echo '{' && \
  	     echo ' "host": "'$(call ahost,$(1))'",' && \
  	     echo ' "url": "https://github.com/$(GHUSER)/esp-quick-toolchain/releases/download/'$(REL)-$(SUBREL)'/'$${tarball}'",' && \
-@@ -322,6 +358,9 @@ makejson = tarballsize=$$(stat -c%s $${tarball}); \
+@@ -323,6 +359,9 @@ linux default: .stage.LINUX.done
  
  linux default: .stage.LINUX.done
  
@@ -101,7 +102,7 @@
  .PRECIOUS: .stage.% .stage.%.%
  
  .PHONY: .stage.download
-@@ -338,7 +377,7 @@ download: .stage.download
+@@ -339,7 +378,7 @@ download: .stage.download
  
  
  # Clean all temporary outputs
@@ -110,7 +111,7 @@
  	echo STAGE: $@
  	rm -rf .stage* *.json *.tar.gz *.zip venv $(ARDUINO) pkg.* log.* > /dev/null 2>&1
  
-@@ -352,31 +391,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -353,31 +392,22 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  .stage.download:
  	echo STAGE: $@
  	mkdir -p $(REPODIR) > $(call log,$@) 2>&1
@@ -143,7 +144,7 @@
  	    case "$${ext}" in \
  	        gz)  (cd $(REPODIR)/$(GCC_DIR); tar xfz ../$${archive});; \
  	        bz2) (cd $(REPODIR)/$(GCC_DIR); tar xfj ../$${archive});; \
-@@ -388,9 +418,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -389,9 +419,6 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  # Checkout any required branches
  .stage.checkout: .stage.prepgit
  	echo STAGE: $@
@@ -153,7 +154,7 @@
  	touch $@
  
  # Apply our patches
-@@ -398,19 +425,19 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -399,19 +426,19 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	echo STAGE: $@
  	for p in $(PATCHDIR)/gcc-*.patch $(PATCHDIR)/gcc$(GCC)/gcc-*.patch; do \
  	    test -r "$$p" || continue ; \
@@ -177,7 +178,7 @@
  	done >> $(call log,$@) 2>&1
  	# Dirty-force HAL definition to binutils and gcc
  	for ow in $(REPODIR)/$(GCC_DIR)/include/xtensa-config.h $(REPODIR)/$(BINUTILS_DIR)/include/xtensa-config.h; do \
-@@ -490,34 +517,35 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -491,34 +518,35 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	echo STAGE: $@
  	rm -rf $(call arena,$@)/hal > $(call log,$@) 2>&1
  	mkdir -p $(call arena,$@)/hal >> $(call log,$@) 2>&1
@@ -218,7 +219,7 @@
  	    cd pkg.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} xtensa-lx106-elf/ ; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -529,13 +557,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -530,13 +558,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	# Dependencies borked in mkspiffs makefile, so don't use parallel make
  	(cd $(call arena,$@)/mkspiffs;\
  	    $(call setenv,$@); \
@@ -235,7 +236,7 @@
  	    cd pkg.mkspiffs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mkspiffs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.mkspiffs.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -547,13 +575,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -548,13 +576,13 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	# Dependencies borked in mklittlefs makefile, so don't use parallel make
  	(cd $(call arena,$@)/mklittlefs;\
  	    $(call setenv,$@); \
@@ -252,7 +253,7 @@
  	    cd pkg.mklittlefs.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} mklittlefs; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.mklittlefs.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -565,12 +593,12 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -566,12 +594,12 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
  	# Dependencies borked in esptool makefile, so don't use parallel make
  	(cd $(call arena,$@)/esptool;\
  	    $(call setenv,$@); \
@@ -268,27 +269,24 @@
  	    cd pkg.esptool.$(call arch,$@) && $(call tarcmd,$@) $(call taropt,$@) ../$${tarball} esptool; cd ..; $(call makejson,$@)) >> $(call log,$@) 2>&1
  	rm -rf pkg.esptool.$(call arch,$@) >> $(call log,$@) 2>&1
  	touch $@
-@@ -583,15 +611,15 @@ clean: .cleaninst.LINUX.clean .cleaninst.LINUX32.clean
+@@ -584,12 +612,12 @@ install: .stage.LINUX.install
  install: .stage.LINUX.install
  .stage.LINUX.install:
  	echo STAGE: $@
 -	rm -rf $(ARDUINO)
 -	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
 -	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
-+	# rm -rf $(ARDUINO)
-+	# git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
-+	# (cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
- 	#echo "-------- Building installable newlib"
- 	#rm -rf arena/newlib-install; mkdir -p arena/newlib-install
- 	#cd arena/newlib-install; $(call setenv,$@); $(REPODIR)/newlib/configure $(CONFIGURENEWLIBINSTALL); $(MAKE); $(MAKE) install
++#	rm -rf $(ARDUINO)
++#	git clone https://github.com/$(GHUSER)/Arduino $(ARDUINO)
++#	(cd $(ARDUINO) && git checkout $(INSTALLBRANCH) && git submodule init && git submodule update)
  	echo "-------- Building installable hal"
  	rm -rf arena/hal-install; mkdir -p arena/hal-install
--	cd arena/hal-install; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
-+	cd arena/hal-install; $(call setenv,$@); CC=xtensa-lx106-elf-gcc CXX=xtensa-lx106-elf-g++ $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=[a-zA-Z0-9_-]*//' | sed 's/--prefix=[a-zA-Z0-9_-\\]*//')
+-	cd arena/hal-install; $(call setenv,$@); $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=.*\s//' | sed 's/--prefix=.*\s//' | sed 's/--disable-libstdcxx-verbose//' )
++	cd arena/hal-install; $(call setenv,$@); CC=xtensa-lx106-elf-gcc CXX=xtensa-lx106-elf-g++ $(REPODIR)/lx106-hal/configure --prefix=$(ARDUINO)/tools/sdk/libc --libdir=$(ARDUINO)/tools/sdk/lib --host=xtensa-lx106-elf $$(echo $(call configure,$@) | sed 's/--host=.*\s//' | sed 's/--prefix=.*\s//' | sed 's/--disable-libstdcxx-verbose//' )
  	cd arena/hal-install; $(call setenv,$@); $(MAKE) ; $(MAKE) install
  	echo "-------- Copying GCC libs"
  	#cp $(call install,$@)/lib/gcc/xtensa-lx106-elf/*/libgcc.a  $(ARDUINO)/tools/sdk/lib/.
-@@ -601,13 +629,13 @@ install: .stage.LINUX.install
+@@ -599,13 +627,13 @@ install: .stage.LINUX.install
  	rm -rf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
  	cp -a $(call install,$@)/xtensa-lx106-elf $(ARDUINO)/tools/sdk/xtensa-lx106-elf
  	echo "-------- Updating package.json"
